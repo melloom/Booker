@@ -1,0 +1,22 @@
+{
+  "name": "appointment-scheduler",
+  "version": "1.0.0",
+  "description": "Appointment scheduling application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "electron": "^28.0.0",
+    "firebase": "^9.6.0",
+    "firebase-admin": "^11.11.1",
+    "nodemailer": "^7.0.3"
+  }
+}

@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isManager() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager';
+    }
+    
+    function isUser() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'user';
+    }
+
+    function isAdminOrManager() {
+      return isAdmin() || isManager();
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Regions collection
+    match /regions/{regionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrManager();
+    }
+
+    // Time slots collection
+    match /timeSlots/{slotId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdminOrManager();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdminOrManager();
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow delete: if isAdminOrManager();
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        isAdminOrManager()
+      );
+      allow delete: if isAdminOrManager();
+    }
+
+    // Cancelled bookings collection
+    match /cancelledBookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow delete: if isAdminOrManager();
+    }
+
+    // Managers collection
+    match /managers/{managerId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager' ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin');
+    }
+
+    // Manager Permissions collection
+    match /managerPermissions/{managerId} {
+      allow read: if isAdminOrManager();
+      allow create, update, delete: if isAdminOrManager();
+    }
+
+    // Admin settings collection
+    match /adminSettings/{settingId} {
+      allow read: if isAdminOrManager();
+      allow write: if isAdminOrManager();
+    }
+
+    // User data collections
+    match /userData/{userId}/{document=**} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 
