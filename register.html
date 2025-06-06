@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register - Appointment Scheduler</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-analytics-compat.js"></script>
+    <!-- Load Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --text-color: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --border-radius: 0.5rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f6f7ff 0%, #eef2ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            color: var(--text-color);
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .register-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .register-header h1 {
+            font-size: 1.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .register-header p {
+            opacity: 0.9;
+            font-size: 0.875rem;
+        }
+
+        .register-form {
+            padding: 2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .password-requirements {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .register-button {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .register-button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .register-button:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            display: none;
+            text-align: center;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .login-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .login-link a:hover {
+            color: var(--primary-hover);
+        }
+
+        @media (max-width: 480px) {
+            .register-container {
+                margin: 1rem;
+            }
+
+            .register-header {
+                padding: 1.5rem;
+            }
+
+            .register-form {
+                padding: 1.5rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1>Create Account</h1>
+            <p>Join us to start scheduling appointments</p>
+        </div>
+        <form id="registerForm" class="register-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="firstName" name="firstName" required placeholder="Enter first name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="lastName" name="lastName" required placeholder="Enter last name">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" required placeholder="Create a password">
+                </div>
+                <div class="password-requirements">
+                    Password must be at least 4 characters long
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm your password">
+                </div>
+            </div>
+            <button type="submit" class="register-button">
+                <i class="fas fa-user-plus"></i>
+                Create Account
+            </button>
+            <div class="error-message" id="errorMessage"></div>
+        </form>
+        <div class="login-link">
+            <a href="login.html">Already have an account? <span>Sign in</span></a>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAN7eGZ8KuVug7My2_-GPg7DC3pVPIWTo4",
+            authDomain: "booking-b1567.firebaseapp.com",
+            projectId: "booking-b1567",
+            storageBucket: "booking-b1567.appspot.com",
+            messagingSenderId: "1027148740103",
+            appId: "1:1027148740103:web:2b580beab39f01a0b6dca2",
+            measurementId: "G-X1BE24TK3Q"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const registerForm = document.getElementById('registerForm');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function validatePassword(password) {
+            const minLength = 4;
+            return password.length >= minLength;
+        }
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+
+            // Clear previous error
+            errorMessage.style.display = 'none';
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                errorMessage.textContent = 'Passwords do not match';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Validate password strength
+            if (!validatePassword(password)) {
+                errorMessage.textContent = 'Password does not meet requirements';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                console.log('Starting registration process...');
+                
+                // Create user with email and password
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                console.log('User created in Auth:', user.uid);
+                
+                // Update user profile with name
+                await user.updateProfile({
+                    displayName: `${firstName} ${lastName}`
+                });
+                console.log('User profile updated');
+
+                const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                const userData = {
+                    uid: user.uid,
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    role: 'user',
+                    createdAt: timestamp,
+                    updatedAt: timestamp,
+                    lastActive: timestamp,
+                    isActive: true
+                };
+
+                // Create user document in users collection
+                await db.collection('users').doc(user.uid).set(userData);
+                console.log('User document created in users collection');
+
+                // Create user document in regular_users collection
+                await db.collection('regular_users').doc(user.uid).set(userData);
+                console.log('User document created in regular_users collection');
+
+                // Create user preferences document
+                await db.collection('userPreferences').doc(user.uid).set({
+                    notifications: true,
+                    emailNotifications: true,
+                    smsNotifications: false,
+                    createdAt: timestamp,
+                    updatedAt: timestamp
+                });
+                console.log('User preferences created');
+
+                // Verify the documents were created
+                const [userDoc, regularUserDoc] = await Promise.all([
+                    db.collection('users').doc(user.uid).get(),
+                    db.collection('regular_users').doc(user.uid).get()
+                ]);
+                
+                if (!userDoc.exists || !regularUserDoc.exists) {
+                    console.error('Failed to create user documents');
+                    console.log('Users collection document exists:', userDoc.exists);
+                    console.log('Regular users collection document exists:', regularUserDoc.exists);
+                    throw new Error('Failed to create user documents');
+                }
+
+                console.log('Registration completed successfully');
+                console.log('User documents verified in both collections');
+                
+                // Redirect to confirmation page
+                window.location.href = 'confirmation.html';
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorMessage.textContent = `Error: ${error.message}`;
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,243 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'super_admin') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin')
+      );
+    }
+    
+    function isManager() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/managers/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager')
+      );
+    }
+    
+    function isUser() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'user'
+      );
+    }
+
+    function isAdminOrManager() {
+      return isAdmin() || isManager();
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserData() {
+      return request.resource.data.keys().hasAll(['email', 'firstName', 'lastName', 'role']) &&
+        request.resource.data.email is string &&
+        request.resource.data.firstName is string &&
+        request.resource.data.lastName is string &&
+        request.resource.data.role in ['admin', 'manager', 'user'];
+    }
+
+    function isValidNewUserData() {
+      return request.resource.data.keys().hasAll(['email', 'firstName', 'lastName']) &&
+        request.resource.data.email is string &&
+        request.resource.data.firstName is string &&
+        request.resource.data.lastName is string;
+    }
+
+    function isValidBooking() {
+      return request.resource.data.keys().hasAll(['userName', 'region', 'product', 'time', 'date', 'status', 'estimatedDuration', 'serviceProvider', 'preparationRequired', 'createdAt']) &&
+        request.resource.data.userName is string &&
+        request.resource.data.region is string &&
+        request.resource.data.product is string &&
+        request.resource.data.time is string &&
+        request.resource.data.date is timestamp &&
+        request.resource.data.status in ['pending', 'confirmed', 'cancelled', 'completed'] &&
+        request.resource.data.estimatedDuration is string &&
+        request.resource.data.serviceProvider is string &&
+        request.resource.data.preparationRequired is string &&
+        request.resource.data.createdAt is timestamp;
+    }
+
+    function isValidTimeSlot() {
+      return request.resource.data.keys().hasAll(['startTime', 'endTime', 'regionId', 'capacity']) &&
+        request.resource.data.startTime is timestamp &&
+        request.resource.data.endTime is timestamp &&
+        request.resource.data.regionId is string &&
+        request.resource.data.capacity is number;
+    }
+
+    // User Collections
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow create: if isAdmin() && isValidUserData();
+      allow update: if isAdmin() && isValidUserData();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /managers/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow create: if isAdmin() && isValidUserData();
+      allow update: if isAdmin() && isValidUserData();
+      allow delete: if isAdmin();
+    }
+
+    match /regular_users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow delete: if isAdmin();
+    }
+
+    // User Data Collections
+    match /userData/{userId}/{document=**} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+    }
+
+    match /userPreferences/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Booking Related Collections
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidBooking();
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == resource.data.userId || 
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['status', 'notes', 'updatedAt'])) ||
+        isAdminOrManager()
+      );
+      allow delete: if isAdminOrManager();
+    }
+
+    match /userBookings/{bookingId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        isAdminOrManager()
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        isAdminOrManager()
+      );
+      allow delete: if isAdminOrManager();
+    }
+
+    match /cancelledBookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidBooking();
+      allow update: if isAdminOrManager();
+      allow delete: if isAdminOrManager();
+    }
+
+    match /bookingHistory/{bookingId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        isAdminOrManager()
+      );
+      allow create: if isAdminOrManager();
+      allow update: if isAdminOrManager();
+      allow delete: if isAdmin();
+    }
+
+    // Time Slot Management
+    match /timeSlots/{slotId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdminOrManager() && isValidTimeSlot();
+      allow update: if (
+        (isAdminOrManager() && isValidTimeSlot()) ||
+        (isAuthenticated() && 
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['availableSlots', 'lastModified']) &&
+         request.resource.data.availableSlots is number &&
+         request.resource.data.availableSlots >= 0)
+      );
+      allow delete: if isAdminOrManager();
+    }
+
+    match /timeSlotAvailability/{slotId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrManager();
+    }
+
+    // Region Management
+    match /regions/{regionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrManager();
+    }
+
+    match /regionSettings/{regionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrManager();
+    }
+
+    // Notification System
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId || 
+        isAdminOrManager()
+      );
+      allow create: if isAdminOrManager();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // System Settings
+    match /systemSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /adminSettings/{settingId} {
+      allow read: if isAdminOrManager();
+      allow write: if isAdmin();
+    }
+
+    match /managerPermissions/{managerId} {
+      allow read: if isAdminOrManager();
+      allow write: if isAdmin();
+    }
+
+    // Analytics and Reports
+    match /analytics/{reportId} {
+      allow read: if isAdminOrManager();
+      allow write: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAdminOrManager();
+      allow write: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

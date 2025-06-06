@@ -1,0 +1,24 @@
+{
+  "name": "booking-app",
+  "version": "1.0.0",
+  "description": "Booking Application",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "init-collections": "node initialize-collections.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "live-server": "^1.2.2"
+  },
+  "dependencies": {
+    "electron": "^28.0.0",
+    "firebase": "^9.23.0",
+    "firebase-admin": "^11.11.1",
+    "nodemailer": "^7.0.3"
+  }
+}

@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: https: https://*.google-analytics.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com; frame-src 'self' https://*.google-analytics.com;">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Add Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Add Firebase SDK -->
+    <script type="module" src="./firebase-config.js"></script>
+    <!-- Add Firebase Collections -->
+    <script type="module" src="./firebase-collections.js"></script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #22c55e;
+            --danger-color: #ef4444;
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-color: #1e293b;
+            --text-light: #64748b;
+            --border-radius: 12px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .header {
+            background-color: var(--card-background);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-title i {
+            color: var(--primary-color);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .header-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .view-schedule-button {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .view-schedule-button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .logout-button {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .logout-button:hover {
+            background-color: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            background: none;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-button:hover {
+            color: var(--primary-color);
+            background-color: #f1f5f9;
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            background-color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-title i {
+            color: var(--primary-color);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: var(--text-color);
+            font-size: 0.875rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .submit-button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .submit-button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .list-container {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .list-item {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .list-item:hover {
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .list-item-subtitle {
+            color: var(--text-light);
+            font-size: 0.875rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .badge.success {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .badge.warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .badge.danger {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            padding: 0.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        .edit-button {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .edit-button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .delete-button {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .delete-button:hover {
+            background-color: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .error-message {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Region Section Styles */
+        .region-section {
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .region-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            padding: 1rem 1.5rem;
+            color: white;
+        }
+
+        .region-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .time-slots-grid {
+            padding: 1.5rem;
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+
+        .time-slots-grid .list-item {
+            background-color: #f8fafc;
+            margin: 0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .time-slots-grid .list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        @media (max-width: 768px) {
+            .time-slots-grid {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .region-header {
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        .day-section {
+            margin: 1rem 0;
+            padding: 0 1rem;
+        }
+
+        .day-header {
+            background: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .day-title {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #495057;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            padding: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .time-slots-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .day-navigation {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .day-nav-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            background: white;
+            color: var(--text-light);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .day-nav-button:hover {
+            background: #f1f5f9;
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .day-nav-button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .region-section {
+            display: none;
+        }
+
+        .region-section.active {
+            display: block;
+        }
+
+        .day-section {
+            display: none;
+        }
+
+        .day-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .day-navigation {
+                padding: 0.75rem;
+            }
+            
+            .day-nav-button {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Region Navigation Styles */
+        .region-navigation {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .region-nav-button {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background-color: white;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .region-nav-button:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .region-nav-button.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        @media (max-width: 768px) {
+            .region-navigation {
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .region-nav-button {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+        }
+
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .list-item:hover {
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .list-item-subtitle {
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        .view-button {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .view-button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .time-slot-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .time-slot-card:hover {
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .time-slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .time-slot-title {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .time-slot-details {
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .time-slot-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            min-width: 300px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .role-indicator {
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            margin-left: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .role-indicator.manager {
+            background-color: #8b5cf6;
+        }
+
+        .role-indicator.admin {
+            background-color: #2563eb;
+        }
+
+        .role-indicator.super_admin {
+            background-color: #dc2626;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            margin-left: 0.75rem;
+            display: inline-block;
+        }
+
+        .user-role.manager {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .user-role.admin {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .user-role.super_admin {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .user-role.user {
+            background-color: #64748b;
+            color: white;
+        }
+
+        .day-navigation,
+        .region-navigation {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .day-nav-button,
+        .region-nav-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--border-radius);
+            background: white;
+            color: var(--text-color);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .day-nav-button:hover,
+        .region-nav-button:hover {
+            background: #f8fafc;
+            border-color: var(--primary-color);
+        }
+
+        .day-nav-button.active,
+        .region-nav-button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .day-nav-button.active:hover,
+        .region-nav-button.active:hover {
+            background: var(--primary-hover);
+        }
+
+        .message {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.success {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .message.error {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .duration-container {
+            margin-top: 5px;
+        }
+
+        .duration-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #495057;
+        }
+
+        .duration-box i {
+            color: #0d6efd;
+            font-size: 1.2rem;
+        }
+
+        .duration-box span {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        .duration-box small {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
+        /* Integration Card Styles */
+        .integrations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .integration-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .integration-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .integration-card.connected {
+            border-left: 4px solid #10b981;
+        }
+
+        .integration-card.disconnected {
+            border-left: 4px solid #ef4444;
+        }
+
+        .integration-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .integration-icon {
+            width: 48px;
+            height: 48px;
+            background: #f3f4f6;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #4b5563;
+        }
+
+        .integration-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+
+        .integration-description {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .integration-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-indicator.connected {
+            background-color: #10b981;
+        }
+
+        .status-indicator.disconnected {
+            background-color: #ef4444;
+        }
+
+        .integration-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .connect-button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .connect-button:hover {
+            background-color: #2563eb;
+        }
+
+        .connect-button.connected {
+            background-color: #10b981;
+        }
+
+        .connect-button.connected:hover {
+            background-color: #059669;
+        }
+
+        .disconnect-button {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .disconnect-button:hover {
+            background-color: #e5e7eb;
+        }
+
+        .integration-settings {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .integration-settings:hover {
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <i class="fas fa-cog"></i>
+                Admin Dashboard
+                <span class="role-indicator" id="userRoleIndicator"></span>
+            </div>
+            <div class="header-actions">
+                <button class="header-button view-schedule-button" onclick="window.location.href='index.html'">
+                    <i class="fas fa-calendar-alt"></i>
+                    View Schedule
+                </button>
+                <button class="header-button logout-button" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="tabs">
+            <button class="tab-button active" id="dashboardTabBtn">Dashboard</button>
+            <button class="tab-button" id="usersTabBtn">Users</button>
+            <button class="tab-button" id="managersTabBtn">Managers</button>
+            <button class="tab-button" id="activeUsersTabBtn">Active Users</button>
+            <button class="tab-button" id="regionsTabBtn">Regions</button>
+            <button class="tab-button" id="timeSlotsTabBtn">Time Slots</button>
+            <button class="tab-button" id="integrationsTabBtn">Integrations</button>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card total-bookings" id="totalBookingsBtn">
+                    <div class="stat-title">Total Bookings</div>
+                    <div class="stat-value" id="totalBookings">0</div>
+                </div>
+                <div class="stat-card cancelled-bookings" id="cancelledBookingsBtn">
+                    <div class="stat-title">Cancelled Bookings</div>
+                    <div class="stat-value" id="cancelledBookings">0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-filter"></i>
+                        Filters
+                    </h2>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="regionFilter">Region</label>
+                        <select id="regionFilter">
+                            <option value="all">All Regions</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dateFilter">Date</label>
+                        <input type="date" id="dateFilter">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regions Tab -->
+        <div id="regionsTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-plus"></i>
+                        Add New Region
+                    </h2>
+                </div>
+                <form id="regionForm" onsubmit="event.preventDefault(); addRegion();">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="regionName">Region Name</label>
+                            <input type="text" id="regionName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regionSubtitle">Subtitle (Optional)</label>
+                            <input type="text" id="regionSubtitle">
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-button">
+                        <i class="fas fa-plus"></i>
+                        Add Region
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-list"></i>
+                        Regions List
+                    </h2>
+                </div>
+                <div id="regionsList" class="list-container">
+                    <!-- Regions will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Slots Tab -->
+        <div id="timeSlotsTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-clock"></i>
+                        Time Slots Management
+                    </h2>
+                    <button class="header-button view-schedule-button" onclick="document.getElementById('timeSlotModal').style.display='flex'; loadRegionsForTimeSlotModal();">
+                        <i class="fas fa-plus"></i>
+                        Add Time Slot
+                    </button>
+                </div>
+
+                <!-- Day Navigation -->
+                <div class="day-navigation">
+                    <button class="day-nav-button active" data-day="all">All Days</button>
+                    <button class="day-nav-button" data-day="same-day">Same Day</button>
+                    <button class="day-nav-button" data-day="Monday">Monday</button>
+                    <button class="day-nav-button" data-day="Tuesday">Tuesday</button>
+                    <button class="day-nav-button" data-day="Wednesday">Wednesday</button>
+                    <button class="day-nav-button" data-day="Thursday">Thursday</button>
+                    <button class="day-nav-button" data-day="Friday">Friday</button>
+                </div>
+
+                <!-- Region Navigation -->
+                <div class="region-navigation">
+                    <button class="region-nav-button active" data-region="all">All Regions</button>
+                    <!-- Region buttons will be populated dynamically -->
+                </div>
+
+                <div id="timeSlotsList" class="list-container">
+                    <!-- Time slots will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Time Slot Modal -->
+        <div id="timeSlotModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center; z-index:9999;">
+            <div style="background:white; padding:2rem; border-radius:8px; min-width:300px; max-width:90vw;">
+                <h2>Add New Time Slot</h2>
+                <form id="timeSlotForm" onsubmit="event.preventDefault(); addTimeSlot();">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="timeSlotDay">Day:</label>
+                            <select id="timeSlotDay" class="form-control" required>
+                                <option value="">Select Day</option>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                                <option value="Saturday">Saturday</option>
+                                <option value="Sunday">Sunday</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeSlotTime">Time:</label>
+                            <select id="timeSlotTime" class="form-control" required>
+                                <option value="">Select Time</option>
+                                <option value="08:00">8:00 AM</option>
+                                <option value="08:30">8:30 AM</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="09:30">9:30 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="10:30">10:30 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="11:30">11:30 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="12:30">12:30 PM</option>
+                                <option value="13:00">1:00 PM</option>
+                                <option value="13:30">1:30 PM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="14:30">2:30 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="15:30">3:30 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                                <option value="16:30">4:30 PM</option>
+                                <option value="17:00">5:00 PM</option>
+                                <option value="17:30">5:30 PM</option>
+                                <option value="18:00">6:00 PM</option>
+                                <option value="18:30">6:30 PM</option>
+                                <option value="19:00">7:00 PM</option>
+                                <option value="19:30">7:30 PM</option>
+                                <option value="20:00">8:00 PM</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration:</label>
+                            <div class="duration-container">
+                                <div class="duration-box">
+                                    <i class="fas fa-clock"></i>
+                                    <span>60-90 minutes</span>
+                                    <small>(standard appointment duration)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeSlotRegion">Region</label>
+                            <select id="timeSlotRegion" required>
+                                <option value="">Select region</option>
+                                <!-- Regions will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeSlotProduct">Product</label>
+                            <select id="timeSlotProduct" required>
+                                <option value="">Select product</option>
+                                <option value="Roofing">Roofing</option>
+                                <option value="Bathrooms">Bathrooms</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:1rem; margin-top:1rem;">
+                        <button type="submit" class="submit-button">
+                            <i class="fas fa-plus"></i>
+                            Add Time Slot
+                        </button>
+                        <button type="button" onclick="document.getElementById('timeSlotModal').style.display='none'" class="submit-button" style="background:#eee; color:#333;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bookings Tab -->
+        <div id="bookingsTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Bookings by Region
+                    </h2>
+                </div>
+                <div id="regionStats" class="list-container">
+                    <!-- Region stats will be populated here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Cancellation Reasons
+                    </h2>
+                </div>
+                <div id="cancellationStats" class="list-container">
+                    <!-- Cancellation stats will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="usersTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-users"></i>
+                        Users Management
+                    </h2>
+                    <button id="createAdminBtn" class="header-button view-schedule-button" onclick="showCreateAdminModal()">
+                        <i class="fas fa-user-plus"></i>
+                        Create Admin/Manager
+                    </button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="userSearch">Search Users</label>
+                        <input type="text" id="userSearch" placeholder="Search by name or email...">
+                    </div>
+                    <div class="form-group">
+                        <label for="userRoleFilter">Filter by Role</label>
+                        <select id="userRoleFilter">
+                            <option value="all">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="usersList" class="list-container">
+                    <!-- Users will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Users Tab -->
+        <div id="activeUsersTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-users"></i>
+                        Active Users
+                        <span class="badge" id="activeUsersCount">0</span>
+                    </h2>
+                </div>
+                <div class="list-container" id="activeUsersList">
+                    <!-- Active users will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Managers Tab -->
+        <div id="managersTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-user-tie"></i>
+                        Managers List
+                    </h2>
+                    <button class="header-button view-schedule-button" onclick="showAddManagerModal()">
+                        <i class="fas fa-plus"></i>
+                        Add Manager
+                    </button>
+                </div>
+                <div id="managersList" class="list-container">
+                    <!-- Managers will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Manager Modal -->
+        <div id="managerModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add New Manager</h2>
+                    <button class="close-modal" onclick="closeManagerModal()">&times;</button>
+                </div>
+                <form id="managerForm" onsubmit="event.preventDefault(); addManager();">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="managerEmail">Email</label>
+                            <input type="email" id="managerEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="managerPassword">Password</label>
+                            <input type="password" id="managerPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="managerName">Full Name</label>
+                            <input type="text" id="managerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="managerPhone">Phone Number</label>
+                            <input type="tel" id="managerPhone" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-button">
+                        <i class="fas fa-plus"></i>
+                        Add Manager
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Integrations Tab -->
+        <div id="integrationsTab" class="tab-content">
+            <div class="integrations-grid">
+                <!-- SMS Integration -->
+                <div class="integration-card" id="smsCard">
+                    <div class="integration-header">
+                        <div class="integration-icon">
+                            <i class="fas fa-sms"></i>
+                        </div>
+                        <h3 class="integration-title">SMS Notifications</h3>
+                        <div class="integration-settings">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                    </div>
+                    <p class="integration-description">
+                        Send automated SMS notifications to your clients for appointment reminders and updates.
+                    </p>
+                    <div class="integration-status">
+                        <div class="status-indicator disconnected"></div>
+                        <span>Not Connected</span>
+                    </div>
+                    <div class="integration-actions">
+                        <button class="connect-button" onclick="connectSMS()">
+                            <i class="fas fa-link"></i>
+                            Connect
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Region Modal -->
+    <div id="editRegionModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center; z-index:9999;">
+      <div style="background:white; padding:2rem; border-radius:8px; min-width:300px; max-width:90vw;">
+        <h2>Edit Region</h2>
+        <form id="editRegionForm">
+          <div class="form-group">
+            <label for="editRegionName">Region Name</label>
+            <input type="text" id="editRegionName" required />
+          </div>
+          <div class="form-group">
+            <label for="editRegionSubtitle">Subtitle (Optional)</label>
+            <input type="text" id="editRegionSubtitle" />
+          </div>
+          <div style="display:flex; gap:1rem; margin-top:1rem;">
+            <button type="submit" class="submit-button">Save</button>
+            <button type="button" onclick="closeEditRegionModal()" class="submit-button" style="background:#eee; color:#333;">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Time Slot Modal -->
+    <div id="editTimeSlotModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center; z-index:9999;">
+      <div style="background:white; padding:2rem; border-radius:8px; min-width:300px; max-width:90vw;">
+        <h2>Edit Time Slot</h2>
+        <form id="editTimeSlotForm">
+          <div class="form-group">
+            <label for="editTimeSlotTime">Time</label>
+            <input type="time" id="editTimeSlotTime" required>
+          </div>
+          <div class="form-group">
+            <label for="editTimeSlotDuration">Duration (minutes)</label>
+            <input type="number" id="editTimeSlotDuration" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="editTimeSlotRegion">Region</label>
+            <input type="text" id="editTimeSlotRegion" required>
+          </div>
+          <div class="form-group">
+            <label for="editTimeSlotProduct">Product</label>
+            <input type="text" id="editTimeSlotProduct" required>
+          </div>
+          <div class="form-group">
+            <label for="editTimeSlotMaxSlots">Maximum Slots</label>
+            <input type="number" id="editTimeSlotMaxSlots" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="editTimeSlotAvailableSlots">Available Slots</label>
+            <input type="number" id="editTimeSlotAvailableSlots" min="0" required>
+          </div>
+          <div style="display:flex; gap:1rem; margin-top:1rem;">
+            <button type="submit" class="submit-button">Save Changes</button>
+            <button type="button" onclick="closeEditTimeSlotModal()" class="submit-button" style="background:#eee; color:#333;">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center; z-index:9999;">
+        <div style="background:white; padding:2rem; border-radius:8px; min-width:300px; max-width:90vw;">
+            <h2>Booking Details</h2>
+            <div class="booking-details">
+                <p><strong>Region:</strong> <span id="modalRegion"></span></p>
+                <p><strong>Product:</strong> <span id="modalProduct"></span></p>
+                <p><strong>Time:</strong> <span id="modalTime"></span></p>
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1rem;">
+                <button onclick="closeBookingModal()" class="submit-button" style="background:#eee; color:#333;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="message success" style="display:none;"></div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="message error" style="display:none;"></div>
+
+    <!-- Load users section script -->
+    <script type="module" src="users-section.js"></script>
+
+    <!-- Load admin dashboard script -->
+    <script type="module" src="./admin-dashboard.js"></script>
+
+    <!-- Add these script tags before the closing body tag -->
+    <script src="geckoboard-integration.js"></script>
+    <script src="salesforce-integration.js"></script>
+    <script src="call-tracking-integration.js"></script>
+
+    <script type="module">
+        import { db, collection, getDocs, addDoc, serverTimestamp } from './firebase-config.js';
+        import { COLLECTIONS } from './firebase-collections.js';
+
+        // Function to load regions into the time slot modal
+        async function loadRegionsForTimeSlotModal() {
+            try {
+                console.log('Starting to load regions...');
+                const regionSelect = document.getElementById('timeSlotRegion');
+                if (!regionSelect) {
+                    console.error('Region select element not found');
+                    return;
+                }
+
+                // Clear existing options
+                regionSelect.innerHTML = '<option value="">Select Region</option>';
+
+                // Get all regions from the database
+                const regionsRef = collection(db, COLLECTIONS.REGIONS);
+                console.log('Fetching regions from Firestore...');
+                
+                const regionsSnapshot = await getDocs(regionsRef);
+                console.log('Found regions:', regionsSnapshot.size);
+                
+                if (regionsSnapshot.empty) {
+                    console.log('No regions found, creating default regions...');
+                    // Create default regions
+                    const defaultRegions = [
+                        { name: 'North Region', isActive: true },
+                        { name: 'South Region', isActive: true },
+                        { name: 'East Region', isActive: true },
+                        { name: 'West Region', isActive: true }
+                    ];
+
+                    // Add each default region
+                    for (const region of defaultRegions) {
+                        try {
+                            await addDoc(regionsRef, {
+                                name: region.name,
+                                isActive: true,
+                                createdAt: serverTimestamp()
+                            });
+                            console.log(`Added region: ${region.name}`);
+                        } catch (error) {
+                            console.error(`Error adding region ${region.name}:`, error);
+                        }
+                    }
+                    
+                    // Fetch the newly created regions
+                    const newRegionsSnapshot = await getDocs(regionsRef);
+                    newRegionsSnapshot.forEach(doc => {
+                        const region = doc.data();
+                        const option = document.createElement('option');
+                        option.value = region.name;
+                        option.textContent = region.name;
+                        regionSelect.appendChild(option);
+                        console.log(`Added option for region: ${region.name}`);
+                    });
+                } else {
+                    // Add existing regions to the select
+                    regionsSnapshot.forEach(doc => {
+                        const region = doc.data();
+                        const option = document.createElement('option');
+                        option.value = region.name;
+                        option.textContent = region.name;
+                        regionSelect.appendChild(option);
+                        console.log(`Added option for existing region: ${region.name}`);
+                    });
+                }
+
+                console.log('Regions loaded successfully');
+            } catch (error) {
+                console.error('Error loading regions:', error);
+                showError('Failed to load regions. Please try again.');
+            }
+        }
+
+        // Make the function globally available
+        window.loadRegionsForTimeSlotModal = loadRegionsForTimeSlotModal;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load initial data
+            loadRegionsForTimeSlotModal();
+        });
+    </script>
+
+    <script>
+        // Integration Functions
+        function connectSMS() {
+            const card = document.getElementById('smsCard');
+            const statusIndicator = card.querySelector('.status-indicator');
+            const statusText = card.querySelector('.integration-status span');
+            const connectButton = card.querySelector('.connect-button');
+
+            // Simulate connection process
+            connectButton.disabled = true;
+            connectButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+
+            setTimeout(() => {
+                card.classList.add('connected');
+                card.classList.remove('disconnected');
+                statusIndicator.classList.add('connected');
+                statusIndicator.classList.remove('disconnected');
+                statusText.textContent = 'Connected';
+                connectButton.innerHTML = '<i class="fas fa-check"></i> Connected';
+                connectButton.classList.add('connected');
+                connectButton.disabled = false;
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 
