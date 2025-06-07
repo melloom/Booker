@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, increment, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { getAnalytics, isSupported } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js';
 
@@ -19,9 +19,28 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Set persistence to SESSION only
+setPersistence(auth, browserSessionPersistence).catch((error) => {
+    console.error("Auth persistence error:", error);
+});
+
 // Initialize Analytics only if supported
 let analytics = null;
 isSupported().then(yes => yes && (analytics = getAnalytics(app)));
+
+// Auth state observer
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log('User is signed in:', user.uid);
+    } else {
+        console.log('No user is signed in');
+        // Only redirect if not on login or register page
+        if (!window.location.pathname.includes('login.html') && 
+            !window.location.pathname.includes('register.html')) {
+            window.location.href = 'login.html';
+        }
+    }
+});
 
 // Make Firebase functions available globally
 window.auth = auth;
