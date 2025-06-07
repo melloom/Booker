@@ -222,10 +222,6 @@
                     <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Enter your password">
                 </div>
             </div>
-            <div class="remember-me">
-                <input type="checkbox" id="rememberMe" name="rememberMe">
-                <label for="rememberMe">Remember me</label>
-            </div>
             <button type="submit" class="login-button">
                 <i class="fas fa-sign-in-alt"></i>
                 Sign In
@@ -236,5 +232,53 @@
             <a href="register.html">Don't have an account? <span>Create one</span></a>
         </div>
     </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAN7eGZ8KuVug7My2_-GPg7DC3pVPIWTo4",
+            authDomain: "booking-b1567.firebaseapp.com",
+            projectId: "booking-b1567",
+            storageBucket: "booking-b1567.firebasestorage.app",
+            messagingSenderId: "1027148740103",
+            appId: "1:1027148740103:web:2b580beab39f01a0b6dca2",
+            measurementId: "G-X1BE24TK3Q"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Set persistence to SESSION only (will clear on tab/window close)
+        setPersistence(auth, browserSessionPersistence);
+
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                // Redirect to dashboard or home page
+                window.location.href = '/dashboard.html';
+            } catch (error) {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = error.message;
+            }
+        });
+
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                window.location.href = '/dashboard.html';
+            }
+        });
+    </script>
 </body>
 </html> 

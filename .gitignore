@@ -96,3 +96,6 @@ booking-b1567-firebase-adminsdk-fbsvc-5d4adbdb59.json
 # Build output
 dist/
 build/
+
+# Local Netlify folder
+.netlify
