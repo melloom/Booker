@@ -5,16 +5,9 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# Add headers for JavaScript files
+# Add headers for all JavaScript files
 [[headers]]
-  for = "/*.js"
-  [headers.values]
-    Content-Type = "application/javascript"
-    Cache-Control = "public, max-age=31536000"
-
-# Add headers for JavaScript modules
-[[headers]]
-  for = "/assets/*.js"
+  for = "/assets/*"
   [headers.values]
     Content-Type = "application/javascript"
     Cache-Control = "public, max-age=31536000"
