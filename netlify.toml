@@ -5,6 +5,12 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Add headers for JavaScript modules
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+
 # Redirect all requests to index.html except for specific paths
 [[redirects]]
   from = "/login"
