@@ -17,6 +17,7 @@ export default defineConfig({
         main: './index.html'
       },
       output: {
+        format: 'es',
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name].[ext]'
