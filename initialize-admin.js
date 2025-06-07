@@ -41,10 +41,12 @@ async function initializeAdmin() {
       }
     }
 
-    // Create or update admin document in admins collection
-    await db.collection('admins').doc(adminUser.uid).set({
+    const timestamp = FieldValue.serverTimestamp();
+    const adminData = {
       email: adminUser.email,
       displayName: adminUser.displayName,
+      firstName: 'Admin',
+      lastName: 'User',
       role: 'admin',
       permissions: {
         canManageAdmins: true,
@@ -54,23 +56,32 @@ async function initializeAdmin() {
         canManageTimeSlots: true,
         canViewAnalytics: true
       },
-      createdAt: FieldValue.serverTimestamp(),
-      lastActive: FieldValue.serverTimestamp(),
+      createdAt: timestamp,
+      lastActive: timestamp,
       isActive: true
-    }, { merge: true });
+    };
+
+    // Create or update admin document in admins collection
+    await db.collection('admins').doc(adminUser.uid).set(adminData, { merge: true });
 
     // Create or update corresponding user document
     await db.collection('users').doc(adminUser.uid).set({
-      firstName: 'Admin',
-      lastName: 'User',
-      email: adminUser.email,
-      role: 'admin',
-      createdAt: FieldValue.serverTimestamp(),
-      lastActive: FieldValue.serverTimestamp(),
-      isActive: true
+      ...adminData,
+      uid: adminUser.uid
     }, { merge: true });
 
-    console.log('Admin collection initialized successfully');
+    // Create or update regular user document
+    await db.collection('regular_users').doc(adminUser.uid).set({
+      ...adminData,
+      uid: adminUser.uid,
+      preferences: {
+        notifications: true,
+        emailNotifications: true,
+        smsNotifications: true
+      }
+    }, { merge: true });
+
+    console.log('Admin user initialized successfully');
     console.log('\nAdmin credentials:');
     console.log('Email:', adminUser.email);
     console.log('Password: Admin@123');

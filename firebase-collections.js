@@ -14,8 +14,6 @@ import {
 const usersCollection = collection(db, 'users');
 const managersCollection = collection(db, 'managers');
 const adminsCollection = collection(db, 'admins');
-const timeSlotsCollection = collection(db, 'timeSlots');
-const bookingsCollection = collection(db, 'bookings');
 
 // User role types
 const USER_ROLES = {
@@ -26,101 +24,12 @@ const USER_ROLES = {
 
 // Firebase Collections
 const COLLECTIONS = {
-    USERS: 'users',
-    REGULAR_USERS: 'regular_users',
     BOOKINGS: 'bookings',
     REGIONS: 'regions',
-    PRODUCTS: 'products',
-    TIME_SLOTS: 'timeSlots',
+    TIME_SLOTS: 'time_slots',
+    USERS: 'users',
     SETTINGS: 'settings'
 };
-
-// Make COLLECTIONS available globally
-window.COLLECTIONS = COLLECTIONS;
-
-// Function to get time slots for a specific date
-async function getTimeSlotsForDate(date) {
-    try {
-        const timeSlotsQuery = query(
-            timeSlotsCollection,
-            where('date', '==', date),
-            where('isActive', '==', true)
-        );
-        const timeSlotsSnapshot = await getDocs(timeSlotsQuery);
-        return timeSlotsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-    } catch (error) {
-        console.error('Error getting time slots:', error);
-        throw error;
-    }
-}
-
-// Function to get time slots for a specific day of the week
-async function getTimeSlotsForDay(dayName) {
-    try {
-        const timeSlotsQuery = query(
-            timeSlotsCollection,
-            where('day', '==', dayName),
-            where('isActive', '==', true)
-        );
-        const timeSlotsSnapshot = await getDocs(timeSlotsQuery);
-        return timeSlotsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-    } catch (error) {
-        console.error('Error getting time slots:', error);
-        throw error;
-    }
-}
-
-// Function to create a booking
-async function createBooking(bookingData) {
-    try {
-        const bookingRef = doc(bookingsCollection);
-        const booking = {
-            ...bookingData,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            status: 'confirmed'
-        };
-        await setDoc(bookingRef, booking);
-        return booking;
-    } catch (error) {
-        console.error('Error creating booking:', error);
-        throw error;
-    }
-}
-
-// Function to update a time slot's availability
-async function updateTimeSlotAvailability(timeSlotId, isBooked) {
-    try {
-        const timeSlotRef = doc(timeSlotsCollection, timeSlotId);
-        await setDoc(timeSlotRef, {
-            isBooked,
-            updatedAt: serverTimestamp()
-        }, { merge: true });
-    } catch (error) {
-        console.error('Error updating time slot:', error);
-        throw error;
-    }
-}
-
-// Function to get all regions
-async function getRegions() {
-    try {
-        const regionsSnapshot = await getDocs(collection(db, COLLECTIONS.REGIONS));
-        return regionsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-    } catch (error) {
-        console.error('Error getting regions:', error);
-        throw error;
-    }
-}
 
 // Function to create a new user
 async function createUser(userData) {
@@ -288,10 +197,5 @@ export {
     usersCollection,
     managersCollection,
     adminsCollection,
-    COLLECTIONS,
-    getTimeSlotsForDate,
-    getTimeSlotsForDay,
-    createBooking,
-    updateTimeSlotAvailability,
-    getRegions
+    COLLECTIONS
 }; 

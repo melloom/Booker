@@ -9,6 +9,8 @@
     <script type="module" src="./firebase-config.js"></script>
     <!-- Add Firebase Collections -->
     <script type="module" src="./firebase-collections.js"></script>
+    <!-- Add User Info Handler -->
+    <script type="module" src="./schedule-user-info.js"></script>
     <!-- Add Booking Modal -->
     <script type="module">
         import { openBookingModal } from './booking-modal.js';
@@ -103,7 +105,24 @@
 
         .user-role {
             font-size: 0.875rem;
-            color: var(--text-light);
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+
+        .user-role.admin {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .user-role.manager {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .user-role.user {
+            background-color: #64748b;
+            color: white;
         }
 
         .main-container {
@@ -1212,7 +1231,7 @@
     </style>
 </head>
 <body>
-    <div class="header">
+    <header class="header">
         <div class="header-content">
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar"></div>
@@ -1230,7 +1249,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </header>
 
     <div class="main-container">
         <h1 class="page-title">
@@ -1521,6 +1540,13 @@
                                 <div class="info-item-value" id="modalTime"></div>
                             </div>
                         </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar"></i>
+                            <div class="info-item-content">
+                                <div class="info-item-label">Date</div>
+                                <div class="info-item-value" id="modalDate"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="booking-summary">
@@ -1617,9 +1643,8 @@
         function getNextDays(count = 10) {
             const days = [];
             const today = new Date();
-            today.setHours(0, 0, 0, 0); // Reset time to start of day
             
-            for (let i = 0; i < count; i++) {
+            for (let i = 1; i <= count; i++) { // Start from 1 to skip today
                 const date = new Date(today);
                 date.setDate(today.getDate() + i);
                 days.push(date);
@@ -1647,18 +1672,19 @@
             // Clear existing buttons
             dayNav.innerHTML = '';
 
-            // Add Same Day button first
+            // Create Same Day button with today's date
+            const today = new Date();
             const sameDayButton = document.createElement('button');
-            sameDayButton.className = 'day-button';
+            sameDayButton.className = 'day-button active';
             sameDayButton.dataset.day = 'same-day';
             sameDayButton.innerHTML = `
                 <i class="fas fa-calendar-day"></i>
-                Same Day
+                Same Day (${formatDate(today)})
             `;
             sameDayButton.onclick = () => switchDay('same-day');
             dayNav.appendChild(sameDayButton);
 
-            // Get next 10 days
+            // Get next 10 days (excluding today)
             const days = getNextDays(10);
             
             // Create buttons for each day
@@ -1667,65 +1693,72 @@
                 dayNav.appendChild(button);
             });
 
-            // Set today as active by default
-            const todayButton = dayNav.querySelector('.day-button.today');
-            if (todayButton) {
-                todayButton.classList.add('active');
-                switchDay(todayButton.dataset.index);
-            } else {
-                // If no today button, set Same Day button as active
-                sameDayButton.classList.add('active');
-                switchDay('same-day');
-            }
-        }
-
-        function switchDay(index) {
-            const buttons = document.querySelectorAll('.day-button');
-            buttons.forEach(button => button.classList.remove('active'));
-            
-            // Check if Same Day button was clicked
-            if (index === 'same-day') {
-                const sameDayButton = document.querySelector('[data-day="same-day"]');
-                sameDayButton.classList.add('active');
-                // Get today's date and show its schedule
-                const today = new Date();
-                const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
-                const formattedDate = today.toISOString().split('T')[0];
-                loadTimeSlots(dayName, formattedDate);
-            } else {
-                const selectedButton = buttons[index];
-                selectedButton.classList.add('active');
-                
-                // Get the date from the button's dataset
-                const selectedDate = new Date(selectedButton.dataset.date);
-                const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
-                const formattedDate = selectedDate.toISOString().split('T')[0];
-                loadTimeSlots(dayName, formattedDate);
-            }
+            // Load today's time slots by default
+            const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+            loadTimeSlots(dayName);
         }
 
         function createDayButton(date, index) {
             const button = document.createElement('button');
-            button.className = `day-button ${isToday(date) ? 'today' : ''}`;
+            button.className = 'day-button';
             button.dataset.date = date.toISOString();
-            button.dataset.index = index;
             button.innerHTML = `
-                <i class="fas ${isToday(date) ? 'fa-calendar-day' : 'fa-calendar'}"></i>
+                <i class="fas fa-calendar"></i>
                 ${formatDate(date)}
             `;
             button.onclick = () => switchDay(index);
             return button;
         }
 
+        function switchDay(index) {
+            const buttons = document.querySelectorAll('.day-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            const clickedButton = event.target.closest('.day-button');
+            if (!clickedButton) return;
+
+            clickedButton.classList.add('active');
+            
+            // Check if Same Day button was clicked
+            if (clickedButton.dataset.day === 'same-day') {
+                const today = new Date();
+                const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+                loadTimeSlots(dayName, today);
+            } else {
+                const selectedDate = new Date(clickedButton.dataset.date);
+                const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
+                loadTimeSlots(dayName, selectedDate);
+            }
+        }
+
         // Booking functionality
         let currentBooking = null;
 
-        function openBookingModal(region, product, time, date) {
-            currentBooking = { region, product, time, date };
+        function openBookingModal(region, product, time) {
+            const selectedDayButton = document.querySelector('.day-button.active');
+            if (!selectedDayButton) {
+                console.error('No day selected');
+                return;
+            }
+
+            let bookingDate;
+            if (selectedDayButton.dataset.day === 'same-day') {
+                bookingDate = new Date();
+            } else {
+                bookingDate = new Date(selectedDayButton.dataset.date);
+            }
+
+            currentBooking = { 
+                region, 
+                product, 
+                time,
+                date: bookingDate
+            };
+
             document.getElementById('modalRegion').textContent = region;
             document.getElementById('modalProduct').textContent = product;
             document.getElementById('modalTime').textContent = time;
-            document.getElementById('modalDate').textContent = new Date(date).toLocaleDateString('en-US', { 
+            document.getElementById('modalDate').textContent = bookingDate.toLocaleDateString('en-US', { 
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -1754,7 +1787,7 @@
 
                 // Get the time slot
                 const timeSlotQuery = await window.getDocs(window.query(
-                    window.collection(window.db, 'timeSlots'),
+                    window.collection(window.db, 'time_slots'),
                     window.where('region', '==', currentBooking.region),
                     window.where('product', '==', currentBooking.product),
                     window.where('time', '==', currentBooking.time)
@@ -1771,14 +1804,15 @@
                     throw new Error('No available slots for this time');
                 }
 
-                // Create booking
+                // Create booking with specific date
                 const bookingRef = await window.addDoc(window.collection(window.db, 'bookings'), {
                     userId: user.uid,
                     userName: `${userData.firstName} ${userData.lastName}`,
                     region: currentBooking.region,
                     product: currentBooking.product,
                     time: currentBooking.time,
-                    date: window.serverTimestamp(),
+                    date: currentBooking.date.toISOString(),
+                    dayOfWeek: currentBooking.date.toLocaleDateString('en-US', { weekday: 'long' }),
                     status: 'confirmed',
                     estimatedDuration: '60-90 minutes',
                     serviceProvider: 'Professional Team',
@@ -1799,7 +1833,8 @@
                     region: currentBooking.region,
                     product: currentBooking.product,
                     time: currentBooking.time,
-                    date: window.serverTimestamp(),
+                    date: currentBooking.date.toISOString(),
+                    dayOfWeek: currentBooking.date.toLocaleDateString('en-US', { weekday: 'long' }),
                     status: 'confirmed',
                     lastModified: window.serverTimestamp()
                 });
@@ -1819,8 +1854,7 @@
                 const region = this.closest('.region-card').querySelector('.region-title').textContent;
                 const product = this.closest('.product-section').querySelector('.product-title').textContent;
                 const time = this.querySelector('.time').textContent.trim();
-                const date = this.getAttribute('data-date');
-                openBookingModal(region, product, time, date);
+                openBookingModal(region, product, time);
             });
         });
 
@@ -1829,40 +1863,37 @@
             if (user) {
                 console.log('User is logged in:', user.uid);
                 try {
-                    // Check users collection first
-                    const userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        console.log('User data:', userData);
-                        
-                        // Display user info
-                        document.getElementById('userName').textContent = `${userData.firstName} ${userData.lastName}`;
-                        document.getElementById('userRole').textContent = `Role: ${userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}`;
-                        document.getElementById('userAvatar').textContent = userData.firstName[0] + userData.lastName[0];
-                        
-                        // Show admin dashboard button for managers and admins
-                        if (userData.role === 'manager' || userData.role === 'admin') {
-                            document.getElementById('adminDashboardButton').style.display = 'flex';
-                        }
-                    } else {
-                        // If not in users collection, check managers collection
-                        const managerDoc = await window.getDoc(window.doc(window.db, 'managers', user.uid));
-                        if (managerDoc.exists()) {
-                            const managerData = managerDoc.data();
-                            console.log('User is a manager:', managerData);
-                            
-                            // Display manager info
-                            document.getElementById('userName').textContent = `${managerData.firstName} ${managerData.lastName}`;
-                            document.getElementById('userRole').textContent = 'Role: Manager';
-                            document.getElementById('userAvatar').textContent = managerData.firstName[0] + managerData.lastName[0];
-                            
-                            // Show admin dashboard button for managers
-                            document.getElementById('adminDashboardButton').style.display = 'flex';
-                        }
+                    // Try to get user from regular_users collection first
+                    let userDoc = await window.getDoc(window.doc(window.db, 'regular_users', user.uid));
+                    
+                    // If not found in regular_users, try users collection
+                    if (!userDoc.exists()) {
+                        userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
                     }
 
-                    // Initialize regions and time slots
-                    await initializeRegions();
+                    if (!userDoc.exists()) {
+                        console.error('User document not found in either collection');
+                        return;
+                    }
+
+                    const userData = userDoc.data();
+                    const headerUserInfo = document.querySelector('.header-user-info');
+                    if (headerUserInfo) {
+                        headerUserInfo.innerHTML = `
+                            <div class="user-avatar">
+                                ${userData.firstName ? userData.firstName[0] : user.email[0]}
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name">${userData.firstName} ${userData.lastName}</div>
+                                <div class="user-role">${userData.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : 'User'}</div>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show admin dashboard button for managers and admins
+                    if (userData.role === 'manager' || userData.role === 'admin') {
+                        document.getElementById('adminDashboardButton').style.display = 'flex';
+                    }
                 } catch (error) {
                     console.error('Error checking user role:', error);
                     showError('Error loading user data');
@@ -1933,15 +1964,34 @@
         }
 
         // Load time slots
-        async function loadTimeSlots(dayName, formattedDate) {
+        async function loadTimeSlots(dayName, selectedDate) {
             try {
-                console.log('Loading time slots for:', dayName, 'on date:', formattedDate);
+                // Get the selected day if no dayName is provided
+                if (!dayName) {
+                    const selectedDayButton = document.querySelector('.day-button.active');
+                    if (!selectedDayButton) {
+                        console.error('No day selected');
+                        return;
+                    }
 
-                // Query time slots for the selected day and date
+                    // Check if it's the Same Day button
+                    if (selectedDayButton.dataset.day === 'same-day') {
+                        const today = new Date();
+                        dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+                        selectedDate = today;
+                    } else {
+                        // Get the full date from the button's dataset
+                        selectedDate = new Date(selectedDayButton.dataset.date);
+                        dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
+                    }
+                }
+
+                console.log('Loading time slots for:', dayName);
+
+                // Query time slots for the selected day
                 const timeSlotsQuery = window.query(
-                    window.collection(window.db, 'timeSlots'),
+                    window.collection(window.db, 'time_slots'),
                     window.where('day', '==', dayName),
-                    window.where('date', '==', formattedDate),
                     window.where('isActive', '==', true)
                 );
 
@@ -1952,7 +2002,7 @@
                 }));
 
                 // Update the UI with the time slots
-                updateTimeSlotsUI(timeSlots);
+                updateTimeSlotsUI(timeSlots, selectedDate);
             } catch (error) {
                 console.error('Error loading time slots:', error);
             }
@@ -1978,7 +2028,7 @@
 
                 // Get all time slots
                 const timeSlotsQuery = window.query(
-                    window.collection(window.db, 'timeSlots'),
+                    window.collection(window.db, 'time_slots'),
                     window.where('isActive', '==', true)
                 );
                 const timeSlotsSnapshot = await window.getDocs(timeSlotsQuery);
@@ -2020,7 +2070,7 @@
         function setupTimeSlotListeners() {
             // Listen for time slot changes
             const timeSlotsQuery = window.query(
-                window.collection(window.db, 'timeSlots'),
+                window.collection(window.db, 'time_slots'),
                 window.where('isActive', '==', true)
             );
             
@@ -2198,7 +2248,7 @@
         // Call initializePage when the document is ready
         document.addEventListener('DOMContentLoaded', initializePage);
 
-        function updateTimeSlotsUI(timeSlots) {
+        function updateTimeSlotsUI(timeSlots, selectedDate) {
             // Group time slots by region and product
             const slotsByRegionAndProduct = {};
             
@@ -2223,7 +2273,7 @@
 
                 // Create HTML for slots
                 container.innerHTML = slots.map(slot => `
-                    <div class="time-slot" data-time="${slot.time}" data-date="${slot.date}" onclick="window.openBookingModal('${slot.region}', '${slot.product}', '${slot.time}', '${slot.date}')">
+                    <div class="time-slot" data-time="${slot.time}" onclick="window.openBookingModal('${slot.region}', '${slot.product}', '${slot.time}')">
                         <div class="time">
                             <i class="far fa-clock"></i>
                             ${slot.time}
@@ -2238,6 +2288,53 @@
                 `).join('') || '<div class="no-slots">No available time slots</div>';
             }
         }
+
+        // Function to update user info in header
+        async function updateUserInfo() {
+            try {
+                const user = window.auth.currentUser;
+                if (!user) {
+                    console.error('No user logged in');
+                    return;
+                }
+
+                // Try to get user from regular_users collection first
+                let userDoc = await window.getDoc(window.doc(window.db, 'regular_users', user.uid));
+                
+                // If not found in regular_users, try users collection
+                if (!userDoc.exists()) {
+                    userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
+                }
+
+                if (!userDoc.exists()) {
+                    console.error('User document not found in either collection');
+                    return;
+                }
+
+                const userData = userDoc.data();
+                const headerUserInfo = document.querySelector('.header-user-info');
+                if (headerUserInfo) {
+                    headerUserInfo.innerHTML = `
+                        <div class="user-avatar">
+                            ${userData.firstName ? userData.firstName[0] : user.email[0]}
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">${userData.firstName} ${userData.lastName}</div>
+                            <div class="user-role">${userData.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : 'User'}</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error updating user info:', error);
+            }
+        }
+
+        // Call updateUserInfo when auth state changes
+        window.onAuthStateChanged(window.auth, (user) => {
+            if (user) {
+                updateUserInfo();
+            }
+        });
     </script>
 </body>
 </html> 

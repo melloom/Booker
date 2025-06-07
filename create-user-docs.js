@@ -1,22 +1,30 @@
-import admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-// Read and parse the service account key
-const serviceAccount = JSON.parse(readFileSync('./serviceAccountKey.json', 'utf8'));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const serviceAccount = JSON.parse(readFileSync(join(__dirname, 'serviceAccountKey.json'), 'utf8'));
 
 // Initialize Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(serviceAccount)
+  });
+}
 
-const db = admin.firestore();
+const db = getFirestore();
+const auth = getAuth();
 
 async function createUserDocuments() {
   try {
     console.log('Starting to create user documents...');
     
     // Get all users from Firebase Auth
-    const listUsersResult = await admin.auth().listUsers();
+    const listUsersResult = await auth.listUsers();
     const users = listUsersResult.users;
     
     console.log(`Found ${users.length} users in Firebase Auth`);
@@ -30,10 +38,11 @@ async function createUserDocuments() {
         const userDoc = await db.collection('users').doc(user.uid).get();
         const regularUserDoc = await db.collection('regular_users').doc(user.uid).get();
         
-        const timestamp = admin.firestore.FieldValue.serverTimestamp();
+        const timestamp = FieldValue.serverTimestamp();
         
         // Create base user data
         const userData = {
+          uid: user.uid,
           email: user.email,
           firstName: user.displayName?.split(' ')[0] || 'User',
           lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
@@ -91,8 +100,9 @@ async function createUserDocuments() {
     console.log('\nFinished processing all users');
   } catch (error) {
     console.error('Error creating user documents:', error);
+  } finally {
+    process.exit();
   }
 }
 
-// Run the script
 createUserDocuments(); 

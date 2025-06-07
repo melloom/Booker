@@ -1,32 +1,4 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, updateDoc, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js';
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAN7eGZ8KuVug7My2_-GPg7DC3pVPIWTo4",
-    authDomain: "booking-b1567.firebaseapp.com",
-    projectId: "booking-b1567",
-    storageBucket: "booking-b1567.appspot.com",
-    messagingSenderId: "1027148740103",
-    appId: "1:1027148740103:web:2b580beab39f01a0b6dca2",
-    measurementId: "G-X1BE24TK3Q"
-};
-
-// Initialize Firebase
-let app;
-try {
-    app = initializeApp(firebaseConfig);
-} catch (error) {
-    if (error.code === 'app/duplicate-app') {
-        app = initializeApp(firebaseConfig);
-    } else {
-        console.error('Firebase initialization error:', error);
-        throw error;
-    }
-}
-
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { auth, db, doc, getDoc, updateDoc, serverTimestamp, setDoc, signInWithEmailAndPassword } from './firebase-config.js';
 
 // Login form submission
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -44,24 +16,84 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Update last login timestamp
-        const userDoc = doc(db, 'users', user.uid);
-        await updateDoc(userDoc, {
-            lastLogin: serverTimestamp()
-        });
+        // Check all collections for user role
+        const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const regularUserDoc = await getDoc(doc(db, 'regular_users', user.uid));
+        
+        const timestamp = serverTimestamp();
+        let userRole = 'user';
+        let userData = {
+            uid: user.uid,
+            email: user.email,
+            firstName: user.displayName?.split(' ')[0] || 'User',
+            lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+            role: userRole,
+            createdAt: timestamp,
+            lastActive: timestamp,
+            isActive: true
+        };
+
+        // Determine user role
+        if (adminDoc.exists()) {
+            userRole = 'admin';
+            userData.role = 'admin';
+        } else if (userDoc.exists()) {
+            userRole = userDoc.data().role;
+            userData.role = userRole;
+        }
+
+        // Update or create documents in all collections
+        if (userRole === 'admin') {
+            // Update admin document
+            if (!adminDoc.exists()) {
+                await setDoc(doc(db, 'admins', user.uid), {
+                    ...userData,
+                    permissions: {
+                        canManageAdmins: true,
+                        canManageManagers: true,
+                        canManageUsers: true,
+                        canManageRegions: true,
+                        canManageTimeSlots: true,
+                        canViewAnalytics: true
+                    }
+                });
+            } else {
+                await updateDoc(doc(db, 'admins', user.uid), {
+                    lastActive: timestamp
+                });
+            }
+        }
+
+        // Update users collection
+        if (!userDoc.exists()) {
+            await setDoc(doc(db, 'users', user.uid), userData);
+        } else {
+            await updateDoc(doc(db, 'users', user.uid), {
+                lastActive: timestamp,
+                role: userRole
+            });
+        }
+
+        // Update regular_users collection
+        if (!regularUserDoc.exists()) {
+            await setDoc(doc(db, 'regular_users', user.uid), userData);
+        } else {
+            await updateDoc(doc(db, 'regular_users', user.uid), {
+                lastActive: timestamp,
+                role: userRole
+            });
+        }
 
         // Redirect based on user role
-        const userData = await getDoc(userDoc);
-        const userRole = userData.data()?.role || 'user';
-        
-        if (userRole === 'admin') {
+        if (userRole === 'admin' || userRole === 'manager') {
             window.location.href = 'admin-dashboard.html';
         } else {
             window.location.href = 'index.html';
         }
     } catch (error) {
         console.error('Login error:', error);
-        errorMessage.textContent = error.message;
+        errorMessage.textContent = `Error: ${error.message}`;
         errorMessage.style.display = 'block';
     }
 }); 

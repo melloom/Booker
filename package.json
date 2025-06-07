@@ -6,14 +6,19 @@
   "type": "module",
   "scripts": {
     "start": "electron .",
-    "init-collections": "node initialize-collections.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "init-collections": "node initialize-collections.js",
+    "init-all": "node initialize-all.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "electron": "^28.0.0",
-    "live-server": "^1.2.2"
+    "live-server": "^1.2.2",
+    "vite": "^5.0.0"
   },
   "dependencies": {
     "electron": "^28.0.0",

@@ -14,9 +14,21 @@ import {
     serverTimestamp,
     addDoc,
     setDoc,
-    onSnapshot
+    onSnapshot,
+    limit
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { 
+    COLLECTIONS,
+    USER_ROLES,
+    createUser,
+    createManager,
+    createAdmin,
+    getUserRole,
+    getAllUsers,
+    getAllManagers,
+    getAllAdmins
+} from './firebase-collections.js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -50,6 +62,7 @@ window.serverTimestamp = serverTimestamp;
 window.addDoc = addDoc;
 window.setDoc = setDoc;
 window.onSnapshot = onSnapshot;
+window.limit = limit;
 
 // Helper function for showing success messages
 function showSuccess(message) {
@@ -115,15 +128,6 @@ function showSuccess(message) {
 window.showSuccess = showSuccess;
 
 // Constants
-const COLLECTIONS = {
-    USERS: 'users',
-    BOOKINGS: 'bookings',
-    CANCELLED_BOOKINGS: 'cancelledBookings',
-    REGIONS: 'regions',
-    TIME_SLOTS: 'timeSlots',
-    MANAGERS: 'managers'
-};
-
 const cancellationReasons = [
     'Customer Request',
     'No Show',
@@ -1736,7 +1740,7 @@ async function loadTimeSlots() {
         const selectedRegion = document.querySelector('.region-nav-button.active')?.dataset.region || 'all';
 
         // Build the query
-        let timeSlotsRef = collection(db, COLLECTIONS.TIME_SLOTS);
+        let timeSlotsRef = collection(db, 'time_slots');
         let constraints = [];
         
         // Apply day filter if not "all"
@@ -1759,15 +1763,15 @@ async function loadTimeSlots() {
         const q = query(timeSlotsRef, ...constraints);
         const snapshot = await getDocs(q);
         
+        if (snapshot.empty) {
+            timeSlotsList.innerHTML = '<div class="empty-state">No time slots found</div>';
+            return;
+        }
+
         const timeSlots = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
-
-        if (timeSlots.length === 0) {
-            timeSlotsList.innerHTML = '<div class="empty-state">No time slots found</div>';
-            return;
-        }
 
         // Sort time slots by day and time
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1790,7 +1794,6 @@ async function loadTimeSlots() {
                     </div>
                     <div class="list-item-subtitle">
                         <div>Region: ${slot.region}</div>
-                        <div>Product: ${slot.product}</div>
                         <div>Duration: ${slot.duration} minutes</div>
                         <div>Total Slots: ${slot.maxSlots}</div>
                     </div>
@@ -1808,7 +1811,12 @@ async function loadTimeSlots() {
 
     } catch (error) {
         console.error('Error loading time slots:', error);
-        showError('Failed to load time slots');
+        showError('Failed to load time slots. Please try again later.');
+        
+        // Show more detailed error message in development
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Detailed error:', error);
+        }
     }
 }
 
@@ -2141,96 +2149,133 @@ window.deleteManager = deleteManager;
 // Function to load integrations
 async function loadIntegrations() {
     try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-            console.error('No user signed in');
-            return;
-        }
-
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (!userDoc.exists()) {
-            console.error('User document not found');
-            return;
-        }
-
-        const userData = userDoc.data();
-        const integrations = userData.integrations || {};
-
-        // Update SMS card
-        const smsCard = document.getElementById('smsCard');
-        if (smsCard) {
-            const statusIndicator = smsCard.querySelector('.status-indicator');
-            const statusText = smsCard.querySelector('.integration-status span');
-            const connectButton = smsCard.querySelector('.connect-button');
-
-            if (integrations.sms) {
-                smsCard.classList.add('connected');
-                smsCard.classList.remove('disconnected');
-                statusIndicator.classList.add('connected');
-                statusIndicator.classList.remove('disconnected');
-                statusText.textContent = 'Connected';
-                connectButton.innerHTML = '<i class="fas fa-check"></i> Connected';
-                connectButton.classList.add('connected');
-            } else {
-                smsCard.classList.remove('connected');
-                smsCard.classList.add('disconnected');
-                statusIndicator.classList.remove('connected');
-                statusIndicator.classList.add('disconnected');
-                statusText.textContent = 'Not Connected';
-                connectButton.innerHTML = '<i class="fas fa-link"></i> Connect';
-                connectButton.classList.remove('connected');
-            }
-        }
+        await initializeSalesforce();
+        await initializeGeckoboard();
     } catch (error) {
         console.error('Error loading integrations:', error);
+        showNotification('Error loading integration settings', 'error');
+    }
+}
+
+// Function to save Salesforce settings
+async function saveSalesforceSettings() {
+    const accessToken = document.getElementById('salesforceAccessToken').value;
+    const instanceUrl = document.getElementById('salesforceInstanceUrl').value;
+
+    if (!accessToken || !instanceUrl) {
+        showNotification('Please fill in all Salesforce fields', 'error');
+        return;
+    }
+
+    const settings = {
+        accessToken,
+        instanceUrl,
+        isConnected: false
+    };
+
+    if (saveIntegrationSettings('salesforce', settings)) {
+        showNotification('Salesforce settings saved successfully', 'success');
+        await testSalesforceConnection();
+    } else {
+        showNotification('Failed to save Salesforce settings', 'error');
+    }
+}
+
+// Function to test Salesforce connection
+async function testSalesforceConnection() {
+    const settings = getIntegrationSettings('salesforce');
+    if (!settings) {
+        showNotification('No Salesforce settings found', 'error');
+        return;
+    }
+
+    try {
+        // Test the connection by making a simple API call
+        const response = await fetch(`${settings.instanceUrl}/services/data/v57.0/sobjects`, {
+            headers: {
+                'Authorization': `Bearer ${settings.accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            settings.isConnected = true;
+            saveIntegrationSettings('salesforce', settings);
+            updateIntegrationStatus('salesforce', true);
+            showNotification('Salesforce connection successful', 'success');
+        } else {
+            throw new Error('Connection failed');
+        }
+    } catch (error) {
+        console.error('Salesforce connection test failed:', error);
+        settings.isConnected = false;
+        saveIntegrationSettings('salesforce', settings);
+        updateIntegrationStatus('salesforce', false);
+        showNotification('Salesforce connection test failed', 'error');
+    }
+}
+
+// Function to save Geckoboard settings
+async function saveGeckoboardSettings() {
+    const apiKey = document.getElementById('geckoboardApiKey').value;
+
+    if (!apiKey) {
+        showNotification('Please enter your Geckoboard API key', 'error');
+        return;
+    }
+
+    const settings = {
+        apiKey,
+        isConnected: false
+    };
+
+    if (saveIntegrationSettings('geckoboard', settings)) {
+        showNotification('Geckoboard settings saved successfully', 'success');
+        await testGeckoboardConnection();
+    } else {
+        showNotification('Failed to save Geckoboard settings', 'error');
+    }
+}
+
+// Function to test Geckoboard connection
+async function testGeckoboardConnection() {
+    const settings = getIntegrationSettings('geckoboard');
+    if (!settings) {
+        showNotification('No Geckoboard settings found', 'error');
+        return;
+    }
+
+    try {
+        // Test the connection by making a simple API call
+        const response = await fetch('https://api.geckoboard.com/datasets', {
+            headers: {
+                'Authorization': `Basic ${btoa(settings.apiKey + ':')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            settings.isConnected = true;
+            saveIntegrationSettings('geckoboard', settings);
+            updateIntegrationStatus('geckoboard', true);
+            showNotification('Geckoboard connection successful', 'success');
+        } else {
+            throw new Error('Connection failed');
+        }
+    } catch (error) {
+        console.error('Geckoboard connection test failed:', error);
+        settings.isConnected = false;
+        saveIntegrationSettings('geckoboard', settings);
+        updateIntegrationStatus('geckoboard', false);
+        showNotification('Geckoboard connection test failed', 'error');
     }
 }
 
 // Make functions globally available
-window.connectSMS = async function() {
-    try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-            throw new Error('No user signed in');
-        }
-
-        const smsCard = document.getElementById('smsCard');
-        const statusIndicator = smsCard.querySelector('.status-indicator');
-        const statusText = smsCard.querySelector('.integration-status span');
-        const connectButton = smsCard.querySelector('.connect-button');
-
-        // Update UI to show connecting state
-        connectButton.disabled = true;
-        connectButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
-
-        // Update user document with SMS integration status
-        await updateDoc(doc(db, 'users', currentUser.uid), {
-            'integrations.sms': true,
-            'integrations.smsConnectedAt': serverTimestamp()
-        });
-
-        // Update UI to show connected state
-        smsCard.classList.add('connected');
-        smsCard.classList.remove('disconnected');
-        statusIndicator.classList.add('connected');
-        statusIndicator.classList.remove('disconnected');
-        statusText.textContent = 'Connected';
-        connectButton.innerHTML = '<i class="fas fa-check"></i> Connected';
-        connectButton.classList.add('connected');
-        connectButton.disabled = false;
-
-        showNotification('SMS integration connected successfully!', 'success');
-    } catch (error) {
-        console.error('Error connecting SMS:', error);
-        showNotification('Failed to connect SMS integration. Please try again.', 'error');
-        
-        // Reset UI on error
-        const smsCard = document.getElementById('smsCard');
-        const connectButton = smsCard.querySelector('.connect-button');
-        connectButton.disabled = false;
-        connectButton.innerHTML = '<i class="fas fa-link"></i> Connect';
-    }
-};
+window.saveSalesforceSettings = saveSalesforceSettings;
+window.testSalesforceConnection = testSalesforceConnection;
+window.saveGeckoboardSettings = saveGeckoboardSettings;
+window.testGeckoboardConnection = testGeckoboardConnection;
 
 // Add event listeners for day and region navigation
 document.addEventListener('DOMContentLoaded', () => {
@@ -2497,17 +2542,88 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeTimeSlotFunctionality();
 });
 
+// Function to update user information in header
+async function updateHeaderUserInfo() {
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('No user logged in');
+            return;
+        }
+
+        // Try to get user from admins collection first
+        let userDoc = await getDoc(doc(db, 'admins', user.uid));
+        let userData;
+        
+        // If not found in admins, try regular_users collection
+        if (!userDoc.exists()) {
+            userDoc = await getDoc(doc(db, 'regular_users', user.uid));
+        }
+        
+        // If not found in regular_users, try users collection
+        if (!userDoc.exists()) {
+            userDoc = await getDoc(doc(db, 'users', user.uid));
+        }
+
+        if (!userDoc.exists()) {
+            console.error('User document not found in any collection');
+            return;
+        }
+
+        userData = userDoc.data();
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const userRole = document.getElementById('userRole');
+
+        // Set user avatar with initial
+        if (userAvatar) {
+            const initial = userData.firstName ? userData.firstName[0].toUpperCase() : user.email[0].toUpperCase();
+            userAvatar.textContent = initial;
+        }
+
+        // Set user name (only first and last name, no role)
+        if (userName) {
+            userName.textContent = `${userData.firstName} ${userData.lastName}`;
+        }
+
+        // Set user role with proper styling (only show role once)
+        if (userRole) {
+            userRole.textContent = 'Admin';
+            userRole.className = 'user-role admin';
+        }
+    } catch (error) {
+        console.error('Error updating header user info:', error);
+    }
+}
+
 // Add initialization function
 async function initializeDashboard() {
     try {
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('No user logged in');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Check if user is an admin
+        const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+        if (!adminDoc.exists()) {
+            console.error('User is not an admin');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Update user info in header first
+        await updateHeaderUserInfo();
+        
         // Load all necessary data
         await Promise.all([
             loadDashboardStats(),
             loadRegions(),
             loadTimeSlots(),
             loadUsers(),
-            loadManagers(),
-            loadIntegrations()
+            loadManagers()
         ]);
         
         // Initialize any UI components
@@ -2558,3 +2674,253 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+export function initializeAdminDashboard() {
+    // Initialize tab switching
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+            
+            // Update active states
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+            
+            button.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // Load tab content
+            switch(tabId) {
+                case 'bookings':
+                    loadBookings();
+                    break;
+                case 'regions':
+                    loadRegions();
+                    break;
+                case 'time-slots':
+                    loadTimeSlots();
+                    break;
+                case 'users':
+                    loadUsers();
+                    break;
+            }
+        });
+    });
+
+    // Load initial content
+    loadBookings();
+}
+
+// Initialize Salesforce integration
+async function initializeSalesforce() {
+    try {
+        const settings = await getIntegrationSettings('salesforce');
+        if (settings) {
+            document.getElementById('salesforceAccessToken').value = settings.accessToken || '';
+            document.getElementById('salesforceInstanceUrl').value = settings.instanceUrl || '';
+            updateIntegrationStatus('salesforce', settings.isConnected);
+        }
+    } catch (error) {
+        console.error('Error initializing Salesforce:', error);
+        showNotification('Error loading Salesforce settings', 'error');
+    }
+}
+
+// Initialize Geckoboard integration
+async function initializeGeckoboard() {
+    try {
+        const settings = await getIntegrationSettings('geckoboard');
+        if (settings) {
+            document.getElementById('geckoboardApiKey').value = settings.apiKey || '';
+            updateIntegrationStatus('geckoboard', settings.isConnected);
+        }
+    } catch (error) {
+        console.error('Error initializing Geckoboard:', error);
+        showNotification('Error loading Geckoboard settings', 'error');
+    }
+}
+
+// Integration Settings Management
+function getIntegrationSettings(integration) {
+    try {
+        const settings = localStorage.getItem(`${integration}Settings`);
+        return settings ? JSON.parse(settings) : null;
+    } catch (error) {
+        console.error(`Error getting ${integration} settings:`, error);
+        return null;
+    }
+}
+
+function saveIntegrationSettings(integration, settings) {
+    try {
+        localStorage.setItem(`${integration}Settings`, JSON.stringify(settings));
+        return true;
+    } catch (error) {
+        console.error(`Error saving ${integration} settings:`, error);
+        return false;
+    }
+}
+
+// Notification System
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="notification-close">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    const container = document.querySelector('.notification-container') || createNotificationContainer();
+    container.appendChild(notification);
+
+    const closeButton = notification.querySelector('.notification-close');
+    closeButton.addEventListener('click', () => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+    });
+
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+function createNotificationContainer() {
+    const container = document.createElement('div');
+    container.className = 'notification-container';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Add notification styles
+const notificationStyles = `
+    .notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .notification {
+        background: white;
+        border-radius: 8px;
+        padding: 12px 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 300px;
+        max-width: 400px;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .notification.error {
+        border-left: 4px solid #ef4444;
+    }
+
+    .notification.info {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .notification.success {
+        border-left: 4px solid #22c55e;
+    }
+
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .notification i {
+        font-size: 1.25rem;
+    }
+
+    .notification.error i {
+        color: #ef4444;
+    }
+
+    .notification.info i {
+        color: #3b82f6;
+    }
+
+    .notification.success i {
+        color: #22c55e;
+    }
+
+    .notification-close {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 4px;
+        transition: color 0.2s;
+    }
+
+    .notification-close:hover {
+        color: #1f2937;
+    }
+
+    .notification.fade-out {
+        animation: slideOut 0.3s ease-in forwards;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+`;
+
+// Add styles to document
+const styleSheet = document.createElement('style');
+styleSheet.textContent = notificationStyles;
+document.head.appendChild(styleSheet);
+
+// Helper function to update integration status UI
+function updateIntegrationStatus(integration, isConnected) {
+    const card = document.getElementById(`${integration}Card`);
+    const statusBadge = document.getElementById(`${integration}Status`).querySelector('.status-badge');
+    
+    if (isConnected) {
+        card.classList.add('connected');
+        card.classList.remove('disconnected');
+        statusBadge.classList.add('connected');
+        statusBadge.classList.remove('disconnected');
+        statusBadge.textContent = 'Connected';
+    } else {
+        card.classList.remove('connected');
+        card.classList.add('disconnected');
+        statusBadge.classList.remove('connected');
+        statusBadge.classList.add('disconnected');
+        statusBadge.textContent = 'Disconnected';
+    }
+}

@@ -70,7 +70,7 @@ export async function openBookingModal(region, product, time) {
 
                 // Get the time slot
                 const timeSlotQuery = await window.getDocs(window.query(
-                    window.collection(window.db, 'timeSlots'),
+                    window.collection(window.db, 'time_slots'),
                     window.where('region', '==', region),
                     window.where('product', '==', product),
                     window.where('time', '==', time),
@@ -173,7 +173,7 @@ window.openBookingModal = openBookingModal;
 function setupTimeSlotListeners() {
     // Listen for changes in time slots
     const timeSlotsQuery = window.query(
-        window.collection(window.db, 'timeSlots'),
+        window.collection(window.db, 'time_slots'),
         window.where('isActive', '==', true)
     );
     

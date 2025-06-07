@@ -56,25 +56,87 @@
         }
 
         .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 2rem;
+            padding: 1rem 2rem;
+            background: white;
+            box-shadow: var(--shadow);
         }
 
         .header-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-color);
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
         }
 
         .header-title i {
             color: var(--primary-color);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0 2rem;
+            background: #f8fafc;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .user-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .user-role {
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .user-role.admin {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .user-role.manager {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .user-role.user {
+            background: #f3f4f6;
+            color: #4b5563;
         }
 
         .header-actions {
@@ -658,19 +720,6 @@
             gap: 0.5rem;
         }
 
-        .action-button {
-            padding: 0.5rem;
-            border-radius: var(--border-radius);
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
-        }
-
         .view-button {
             background-color: var(--primary-color);
             color: white;
@@ -769,20 +818,23 @@
             padding: 0.25rem 0.75rem;
             border-radius: 1rem;
             margin-left: 1rem;
-            background-color: var(--primary-color);
-            color: white;
+            background: #dbeafe;
+            color: #1e40af;
         }
 
         .role-indicator.manager {
-            background-color: #8b5cf6;
+            background: #fef3c7;
+            color: #92400e;
         }
 
         .role-indicator.admin {
-            background-color: #2563eb;
+            background: #dbeafe;
+            color: #1e40af;
         }
 
         .role-indicator.super_admin {
-            background-color: #dc2626;
+            background: #fee2e2;
+            color: #991b1b;
         }
 
         .user-role {
@@ -914,19 +966,19 @@
             font-size: 0.875rem;
         }
 
-        /* Integration Card Styles */
+        /* Integration Styles */
         .integrations-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            padding: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
         }
 
         .integration-card {
             background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             border: 1px solid #e5e7eb;
             position: relative;
@@ -934,133 +986,207 @@
         }
 
         .integration-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
         .integration-card.connected {
-            border-left: 4px solid #10b981;
+            border-left: 6px solid #10b981;
         }
 
         .integration-card.disconnected {
-            border-left: 4px solid #ef4444;
+            border-left: 6px solid #ef4444;
         }
 
         .integration-header {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .integration-icon {
-            width: 48px;
-            height: 48px;
-            background: #f3f4f6;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: #4b5563;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .integration-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .integration-description {
-            color: #6b7280;
-            font-size: 0.875rem;
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
+        .integration-title i {
+            font-size: 2rem;
+            color: var(--primary-color);
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .integration-card:hover .integration-title i {
+            transform: scale(1.1);
+            background: #eef2ff;
+        }
+
+        .integration-title h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
         }
 
         .integration-status {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
             font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        .status-badge.connected {
+            background: #dcfce7;
+            color: #166534;
         }
 
-        .status-indicator.connected {
-            background-color: #10b981;
+        .status-badge.disconnected {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
-        .status-indicator.disconnected {
-            background-color: #ef4444;
+        .integration-body {
+            padding: 1rem 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 1.1rem;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .input-with-icon input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: #f8fafc;
+            line-height: 1.5;
+            height: 3.5rem;
+        }
+
+        .input-with-icon input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .input-with-icon input::placeholder {
+            color: #94a3b8;
+            line-height: 1.5;
         }
 
         .integration-actions {
             display: flex;
             gap: 1rem;
+            margin-top: 2rem;
         }
 
-        .connect-button {
-            background-color: #3b82f6;
-            color: white;
+        .action-button {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            flex: 1;
+            justify-content: center;
         }
 
-        .connect-button:hover {
-            background-color: #2563eb;
+        .save-button {
+            background-color: var(--primary-color);
+            color: white;
         }
 
-        .connect-button.connected {
-            background-color: #10b981;
+        .save-button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
         }
 
-        .connect-button.connected:hover {
-            background-color: #059669;
+        .test-button {
+            background-color: #f8fafc;
+            color: var(--text-color);
+            border: 2px solid #e2e8f0;
         }
 
-        .disconnect-button {
-            background-color: #f3f4f6;
-            color: #4b5563;
-            border: 1px solid #e5e7eb;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .test-button:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
-        .disconnect-button:hover {
-            background-color: #e5e7eb;
+        .action-button i {
+            font-size: 1.1rem;
         }
 
-        .integration-settings {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            color: #6b7280;
-            cursor: pointer;
-            transition: all 0.2s ease;
+        .action-button:active {
+            transform: translateY(0);
         }
 
-        .integration-settings:hover {
-            color: #4b5563;
+        /* Add a subtle gradient background to the integration section */
+        #integrationsTab {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            min-height: calc(100vh - 64px);
+        }
+
+        .page-header {
+            padding: 2rem 2rem 1rem;
+        }
+
+        .page-header h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-light);
+            font-size: 1.1rem;
         }
     </style>
 </head>
@@ -1070,7 +1196,13 @@
             <div class="header-title">
                 <i class="fas fa-cog"></i>
                 Admin Dashboard
-                <span class="role-indicator" id="userRoleIndicator"></span>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar"></div>
+                <div class="user-details">
+                    <div class="user-name" id="userName"></div>
+                    <div class="user-role" id="userRole"></div>
+                </div>
             </div>
             <div class="header-actions">
                 <button class="header-button view-schedule-button" onclick="window.location.href='index.html'">
@@ -1206,6 +1338,78 @@
 
                 <div id="timeSlotsList" class="list-container">
                     <!-- Time slots will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Integrations Tab -->
+        <div id="integrationsTab" class="tab-content">
+            <div class="page-header">
+                <h2>Integrations</h2>
+                <p>Connect and manage your third-party integrations</p>
+            </div>
+
+            <div class="integrations-grid">
+                <!-- Salesforce Integration -->
+                <div class="integration-card" id="salesforceCard">
+                    <div class="integration-header">
+                        <div class="integration-title">
+                            <i class="fas fa-cloud"></i>
+                            <h3>Salesforce</h3>
+                        </div>
+                        <div class="integration-status" id="salesforceStatus">
+                            <span class="status-badge disconnected">Disconnected</span>
+                        </div>
+                    </div>
+                    <div class="integration-body">
+                        <div class="form-group">
+                            <label for="salesforceAccessToken">Access Token</label>
+                            <input type="password" id="salesforceAccessToken" placeholder="Enter Salesforce access token">
+                        </div>
+                        <div class="form-group">
+                            <label for="salesforceInstanceUrl">Instance URL</label>
+                            <input type="text" id="salesforceInstanceUrl" placeholder="Enter Salesforce instance URL">
+                        </div>
+                        <div class="integration-actions">
+                            <button class="action-button save-button" onclick="saveSalesforceSettings()">
+                                <i class="fas fa-save"></i>
+                                Save Settings
+                            </button>
+                            <button class="action-button test-button" onclick="testSalesforceConnection()">
+                                <i class="fas fa-plug"></i>
+                                Test Connection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Geckoboard Integration -->
+                <div class="integration-card" id="geckoboardCard">
+                    <div class="integration-header">
+                        <div class="integration-title">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Geckoboard</h3>
+                        </div>
+                        <div class="integration-status" id="geckoboardStatus">
+                            <span class="status-badge disconnected">Disconnected</span>
+                        </div>
+                    </div>
+                    <div class="integration-body">
+                        <div class="form-group">
+                            <label for="geckoboardApiKey">API Key</label>
+                            <input type="password" id="geckoboardApiKey" placeholder="Enter Geckoboard API key">
+                        </div>
+                        <div class="integration-actions">
+                            <button class="action-button save-button" onclick="saveGeckoboardSettings()">
+                                <i class="fas fa-save"></i>
+                                Save Settings
+                            </button>
+                            <button class="action-button test-button" onclick="testGeckoboardConnection()">
+                                <i class="fas fa-plug"></i>
+                                Test Connection
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1428,37 +1632,6 @@
                 </form>
             </div>
         </div>
-
-        <!-- Integrations Tab -->
-        <div id="integrationsTab" class="tab-content">
-            <div class="integrations-grid">
-                <!-- SMS Integration -->
-                <div class="integration-card" id="smsCard">
-                    <div class="integration-header">
-                        <div class="integration-icon">
-                            <i class="fas fa-sms"></i>
-                        </div>
-                        <h3 class="integration-title">SMS Notifications</h3>
-                        <div class="integration-settings">
-                            <i class="fas fa-cog"></i>
-                        </div>
-                    </div>
-                    <p class="integration-description">
-                        Send automated SMS notifications to your clients for appointment reminders and updates.
-                    </p>
-                    <div class="integration-status">
-                        <div class="status-indicator disconnected"></div>
-                        <span>Not Connected</span>
-                    </div>
-                    <div class="integration-actions">
-                        <button class="connect-button" onclick="connectSMS()">
-                            <i class="fas fa-link"></i>
-                            Connect
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Edit Region Modal -->
@@ -1545,122 +1718,5 @@
 
     <!-- Load admin dashboard script -->
     <script type="module" src="./admin-dashboard.js"></script>
-
-    <!-- Add these script tags before the closing body tag -->
-    <script src="geckoboard-integration.js"></script>
-    <script src="salesforce-integration.js"></script>
-    <script src="call-tracking-integration.js"></script>
-
-    <script type="module">
-        import { db, collection, getDocs, addDoc, serverTimestamp } from './firebase-config.js';
-        import { COLLECTIONS } from './firebase-collections.js';
-
-        // Function to load regions into the time slot modal
-        async function loadRegionsForTimeSlotModal() {
-            try {
-                console.log('Starting to load regions...');
-                const regionSelect = document.getElementById('timeSlotRegion');
-                if (!regionSelect) {
-                    console.error('Region select element not found');
-                    return;
-                }
-
-                // Clear existing options
-                regionSelect.innerHTML = '<option value="">Select Region</option>';
-
-                // Get all regions from the database
-                const regionsRef = collection(db, COLLECTIONS.REGIONS);
-                console.log('Fetching regions from Firestore...');
-                
-                const regionsSnapshot = await getDocs(regionsRef);
-                console.log('Found regions:', regionsSnapshot.size);
-                
-                if (regionsSnapshot.empty) {
-                    console.log('No regions found, creating default regions...');
-                    // Create default regions
-                    const defaultRegions = [
-                        { name: 'North Region', isActive: true },
-                        { name: 'South Region', isActive: true },
-                        { name: 'East Region', isActive: true },
-                        { name: 'West Region', isActive: true }
-                    ];
-
-                    // Add each default region
-                    for (const region of defaultRegions) {
-                        try {
-                            await addDoc(regionsRef, {
-                                name: region.name,
-                                isActive: true,
-                                createdAt: serverTimestamp()
-                            });
-                            console.log(`Added region: ${region.name}`);
-                        } catch (error) {
-                            console.error(`Error adding region ${region.name}:`, error);
-                        }
-                    }
-                    
-                    // Fetch the newly created regions
-                    const newRegionsSnapshot = await getDocs(regionsRef);
-                    newRegionsSnapshot.forEach(doc => {
-                        const region = doc.data();
-                        const option = document.createElement('option');
-                        option.value = region.name;
-                        option.textContent = region.name;
-                        regionSelect.appendChild(option);
-                        console.log(`Added option for region: ${region.name}`);
-                    });
-                } else {
-                    // Add existing regions to the select
-                    regionsSnapshot.forEach(doc => {
-                        const region = doc.data();
-                        const option = document.createElement('option');
-                        option.value = region.name;
-                        option.textContent = region.name;
-                        regionSelect.appendChild(option);
-                        console.log(`Added option for existing region: ${region.name}`);
-                    });
-                }
-
-                console.log('Regions loaded successfully');
-            } catch (error) {
-                console.error('Error loading regions:', error);
-                showError('Failed to load regions. Please try again.');
-            }
-        }
-
-        // Make the function globally available
-        window.loadRegionsForTimeSlotModal = loadRegionsForTimeSlotModal;
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load initial data
-            loadRegionsForTimeSlotModal();
-        });
-    </script>
-
-    <script>
-        // Integration Functions
-        function connectSMS() {
-            const card = document.getElementById('smsCard');
-            const statusIndicator = card.querySelector('.status-indicator');
-            const statusText = card.querySelector('.integration-status span');
-            const connectButton = card.querySelector('.connect-button');
-
-            // Simulate connection process
-            connectButton.disabled = true;
-            connectButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
-
-            setTimeout(() => {
-                card.classList.add('connected');
-                card.classList.remove('disconnected');
-                statusIndicator.classList.add('connected');
-                statusIndicator.classList.remove('disconnected');
-                statusText.textContent = 'Connected';
-                connectButton.innerHTML = '<i class="fas fa-check"></i> Connected';
-                connectButton.classList.add('connected');
-                connectButton.disabled = false;
-            }, 2000);
-        }
-    </script>
 </body>
 </html> 

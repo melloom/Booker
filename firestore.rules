@@ -9,8 +9,8 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        (exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/regular_users/$(request.auth.uid)).data.role == 'admin')
       );
     }
     
@@ -26,15 +26,16 @@ service cloud.firestore {
     function isManager() {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/managers/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager')
+        (exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/regular_users/$(request.auth.uid)).data.role == 'manager')
       );
     }
     
     function isUser() {
       return isAuthenticated() && (
-        exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'user'
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/regular_users/$(request.auth.uid)).data.role == 'user')
       );
     }
 
@@ -83,7 +84,15 @@ service cloud.firestore {
         request.resource.data.capacity is number;
     }
 
-    // User Collections
+    // Time Slots Collection
+    match /time_slots/{slotId} {
+      allow read: if isAuthenticated() && (isAdmin() || isManager() || isUser());
+      allow create: if isAdminOrManager();
+      allow update: if isAdminOrManager();
+      allow delete: if isAdminOrManager();
+    }
+
+    // Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
       allow create: if isAuthenticated() && request.auth.uid == userId;
@@ -105,6 +114,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Regular Users Collection
     match /regular_users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrManager());
       allow create: if isAuthenticated() && request.auth.uid == userId;
@@ -123,14 +133,12 @@ service cloud.firestore {
       allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Booking Related Collections
+    // Bookings Collection
     match /bookings/{bookingId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidBooking();
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
-        (request.auth.uid == resource.data.userId || 
-         request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['status', 'notes', 'updatedAt'])) ||
+        request.auth.uid == resource.data.userId || 
         isAdminOrManager()
       );
       allow delete: if isAdminOrManager();
@@ -166,27 +174,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Time Slot Management
-    match /timeSlots/{slotId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdminOrManager() && isValidTimeSlot();
-      allow update: if (
-        (isAdminOrManager() && isValidTimeSlot()) ||
-        (isAuthenticated() && 
-         request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['availableSlots', 'lastModified']) &&
-         request.resource.data.availableSlots is number &&
-         request.resource.data.availableSlots >= 0)
-      );
-      allow delete: if isAdminOrManager();
-    }
-
-    match /timeSlotAvailability/{slotId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdminOrManager();
-    }
-
-    // Region Management
+    // Regions Collection
     match /regions/{regionId} {
       allow read: if isAuthenticated();
       allow write: if isAdminOrManager();
