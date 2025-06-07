@@ -1,4 +1,50 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { auth, db, doc, getDoc, updateDoc, serverTimestamp, setDoc, signInWithEmailAndPassword } from './firebase-config.js';
+
+// Your Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyAN7eGZ8KuVug7My2_-GPg7DC3pVPIWTo4",
+    authDomain: "booking-b1567.firebaseapp.com",
+    projectId: "booking-b1567",
+    storageBucket: "booking-b1567.firebasestorage.app",
+    messagingSenderId: "1027148740103",
+    appId: "1:1027148740103:web:2b580beab39f01a0b6dca2",
+    measurementId: "G-X1BE24TK3Q"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// Handle initial auth state
+let isInitialized = false;
+
+// Function to handle auth state changes
+const handleAuthState = (user) => {
+    const currentPath = window.location.pathname;
+    const isLoginPage = currentPath.includes('login.html');
+    const isRegisterPage = currentPath.includes('register.html');
+
+    if (!user && !isLoginPage && !isRegisterPage) {
+        // Not logged in and not on auth pages - redirect to login
+        window.location.replace('/login.html');
+    } else if (user && (isLoginPage || isRegisterPage)) {
+        // Logged in but on auth pages - redirect to dashboard
+        window.location.replace('/dashboard.html');
+    }
+};
+
+// Initialize auth state listener
+onAuthStateChanged(auth, (user) => {
+    if (!isInitialized) {
+        isInitialized = true;
+        handleAuthState(user);
+    }
+});
+
+// Export auth instance
+export { auth };
 
 // Login form submission
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
