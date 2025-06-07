@@ -260,13 +260,15 @@
         auth.onAuthStateChanged((user) => {
             if (user) {
                 // Only redirect if we're on the login page
-                if (window.location.pathname === '/login' || window.location.pathname === '/login.html') {
-                    window.location.href = '/';
+                const currentPath = window.location.pathname;
+                if (currentPath.endsWith('login.html') || currentPath.endsWith('login')) {
+                    window.location.href = './index.html';
                 }
             } else {
                 // If not logged in and not on login page, redirect to login
-                if (window.location.pathname !== '/login' && window.location.pathname !== '/login.html') {
-                    window.location.href = '/login';
+                const currentPath = window.location.pathname;
+                if (!currentPath.endsWith('login.html') && !currentPath.endsWith('login')) {
+                    window.location.href = './login.html';
                 }
             }
         });
@@ -279,7 +281,7 @@
             try {
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 // Redirect to home page after successful login
-                window.location.href = '/';
+                window.location.href = './index.html';
             } catch (error) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = error.message;

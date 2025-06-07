@@ -15,9 +15,9 @@ firebase.initializeApp(firebaseConfig);
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     // User is signed in
-    window.location.href = '/scheduler.html';
+    window.location.href = './scheduler.html';
   } else {
     // User is signed out
-    window.location.href = '/login.html';
+    window.location.href = './login.html';
   }
 }); 
