@@ -4,7 +4,10 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
-    host: true
+    host: true,
+    headers: {
+      'Content-Type': 'application/javascript'
+    }
   },
   build: {
     outDir: 'dist',
