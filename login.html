@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Load Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script type="module" src="firebase-init.js"></script>
     <!-- Load Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -234,7 +233,10 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
         // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAN7eGZ8KuVug7My2_-GPg7DC3pVPIWTo4",
@@ -247,29 +249,14 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
-        // Set persistence to SESSION only
-        auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
-            .catch((error) => {
-                console.error("Auth persistence error:", error);
-            });
+        // Set persistence to SESSION only (will clear on tab/window close)
+        setPersistence(auth, browserSessionPersistence);
 
         const loginForm = document.getElementById('loginForm');
         const errorMessage = document.getElementById('errorMessage');
-
-        // Check if user is already logged in
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // User is signed in
-                window.location.href = '/scheduler.html';
-            }
-        }, (error) => {
-            console.error("Auth state change error:", error);
-            errorMessage.style.display = 'block';
-            errorMessage.textContent = "Authentication error. Please try again.";
-        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -277,13 +264,19 @@
             const password = document.getElementById('password').value;
 
             try {
-                errorMessage.style.display = 'none';
-                await auth.signInWithEmailAndPassword(email, password);
-                // Redirect will be handled by the auth state change listener
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                // Redirect to dashboard or home page
+                window.location.href = '/dashboard.html';
             } catch (error) {
-                console.error("Login error:", error);
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = error.message;
+            }
+        });
+
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                window.location.href = '/dashboard.html';
             }
         });
     </script>
