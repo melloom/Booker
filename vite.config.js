@@ -2,26 +2,20 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'https://firestore.googleapis.com',
-        changeOrigin: true,
-        secure: true
-      }
-    }
+    port: 3000,
+    strictPort: true,
+    host: true
   },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    emptyOutDir: true,
     rollupOptions: {
-      external: [
-        'firebase/app',
-        'firebase/auth',
-        'firebase/firestore',
-        'firebase/analytics'
-      ]
+      output: {
+        manualChunks: undefined,
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
+      }
     }
   }
 }) 
