@@ -24,12 +24,17 @@ const USER_ROLES = {
 
 // Firebase Collections
 const COLLECTIONS = {
+    USERS: 'users',
+    REGULAR_USERS: 'regular_users',
     BOOKINGS: 'bookings',
     REGIONS: 'regions',
+    PRODUCTS: 'products',
     TIME_SLOTS: 'time_slots',
-    USERS: 'users',
     SETTINGS: 'settings'
 };
+
+// Make COLLECTIONS available globally
+window.COLLECTIONS = COLLECTIONS;
 
 // Function to create a new user
 async function createUser(userData) {

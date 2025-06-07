@@ -1,50 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { auth, db, doc, getDoc, updateDoc, serverTimestamp, setDoc, signInWithEmailAndPassword } from './firebase-config.js';
-
-// Your Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyAN7eGZ8KuVug7My2_-GPg7DC3pVPIWTo4",
-    authDomain: "booking-b1567.firebaseapp.com",
-    projectId: "booking-b1567",
-    storageBucket: "booking-b1567.firebasestorage.app",
-    messagingSenderId: "1027148740103",
-    appId: "1:1027148740103:web:2b580beab39f01a0b6dca2",
-    measurementId: "G-X1BE24TK3Q"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-// Handle initial auth state
-let isInitialized = false;
-
-// Function to handle auth state changes
-const handleAuthState = (user) => {
-    const currentPath = window.location.pathname;
-    const isLoginPage = currentPath.includes('login.html');
-    const isRegisterPage = currentPath.includes('register.html');
-
-    if (!user && !isLoginPage && !isRegisterPage) {
-        // Not logged in and not on auth pages - redirect to login
-        window.location.replace('/login.html');
-    } else if (user && (isLoginPage || isRegisterPage)) {
-        // Logged in but on auth pages - redirect to dashboard
-        window.location.replace('/dashboard.html');
-    }
-};
-
-// Initialize auth state listener
-onAuthStateChanged(auth, (user) => {
-    if (!isInitialized) {
-        isInitialized = true;
-        handleAuthState(user);
-    }
-});
-
-// Export auth instance
-export { auth };
 
 // Login form submission
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -62,76 +16,46 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Check all collections for user role
-        const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+        // Check if user document exists in users collection
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const regularUserDoc = await getDoc(doc(db, 'regular_users', user.uid));
         
         const timestamp = serverTimestamp();
-        let userRole = 'user';
-        let userData = {
+        const userData = {
             uid: user.uid,
             email: user.email,
             firstName: user.displayName?.split(' ')[0] || 'User',
             lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-            role: userRole,
+            role: 'user',
             createdAt: timestamp,
             lastActive: timestamp,
             isActive: true
         };
 
-        // Determine user role
-        if (adminDoc.exists()) {
-            userRole = 'admin';
-            userData.role = 'admin';
-        } else if (userDoc.exists()) {
-            userRole = userDoc.data().role;
-            userData.role = userRole;
-        }
-
-        // Update or create documents in all collections
-        if (userRole === 'admin') {
-            // Update admin document
-            if (!adminDoc.exists()) {
-                await setDoc(doc(db, 'admins', user.uid), {
-                    ...userData,
-                    permissions: {
-                        canManageAdmins: true,
-                        canManageManagers: true,
-                        canManageUsers: true,
-                        canManageRegions: true,
-                        canManageTimeSlots: true,
-                        canViewAnalytics: true
-                    }
-                });
-            } else {
-                await updateDoc(doc(db, 'admins', user.uid), {
-                    lastActive: timestamp
-                });
-            }
-        }
-
-        // Update users collection
+        // Create or update user document
         if (!userDoc.exists()) {
+            console.log('Creating user document...');
             await setDoc(doc(db, 'users', user.uid), userData);
         } else {
+            console.log('Updating user document...');
             await updateDoc(doc(db, 'users', user.uid), {
-                lastActive: timestamp,
-                role: userRole
+                lastActive: timestamp
             });
         }
 
-        // Update regular_users collection
+        // Create or update regular_user document
         if (!regularUserDoc.exists()) {
+            console.log('Creating regular_user document...');
             await setDoc(doc(db, 'regular_users', user.uid), userData);
         } else {
+            console.log('Updating regular_user document...');
             await updateDoc(doc(db, 'regular_users', user.uid), {
-                lastActive: timestamp,
-                role: userRole
+                lastActive: timestamp
             });
         }
 
         // Redirect based on user role
+        const userRole = userDoc.exists() ? userDoc.data().role : 'user';
         if (userRole === 'admin' || userRole === 'manager') {
             window.location.href = 'admin-dashboard.html';
         } else {

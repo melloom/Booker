@@ -6,9 +6,6 @@
   "type": "module",
   "scripts": {
     "start": "electron .",
-    "dev": "vite --mode development",
-    "build": "vite build --mode production",
-    "preview": "vite preview",
     "init-collections": "node initialize-collections.js",
     "init-all": "node initialize-all.js"
   },
@@ -17,8 +14,7 @@
   "license": "ISC",
   "devDependencies": {
     "electron": "^28.0.0",
-    "live-server": "^1.2.2",
-    "vite": "^5.0.0"
+    "live-server": "^1.2.2"
   },
   "dependencies": {
     "electron": "^28.0.0",

@@ -62,8 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             await updateHeaderUserInfo();
         } else {
-            // Use relative path for production
-            window.location.href = './login.html';
+            window.location.href = 'login.html';
         }
     });
 });

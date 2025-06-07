@@ -74,6 +74,7 @@ export async function openBookingModal(region, product, time) {
                     window.where('region', '==', region),
                     window.where('product', '==', product),
                     window.where('time', '==', time),
+                    window.where('day', '==', document.querySelector('.day-button.active').dataset.day),
                     window.where('isActive', '==', true)
                 ));
 

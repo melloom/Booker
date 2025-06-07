@@ -19,9 +19,17 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Initialize Analytics only if supported
+// Initialize Analytics only if supported and not in Electron
 let analytics = null;
-isSupported().then(yes => yes && (analytics = getAnalytics(app)));
+if (typeof window !== 'undefined' && !window.navigator.userAgent.toLowerCase().includes('electron')) {
+    isSupported().then(yes => {
+        if (yes) {
+            analytics = getAnalytics(app);
+        }
+    }).catch(error => {
+        console.warn('Analytics initialization failed:', error);
+    });
+}
 
 // Make Firebase functions available globally
 window.auth = auth;

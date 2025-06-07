@@ -143,7 +143,6 @@ async function initializeAll() {
       }
     }
 
-    // Create admin document in admins collection
     await db.collection(COLLECTIONS.ADMINS).doc(adminUser.uid).set({
       email: adminUser.email,
       displayName: adminUser.displayName,
@@ -160,67 +159,6 @@ async function initializeAll() {
       lastActive: FieldValue.serverTimestamp(),
       isActive: true
     });
-
-    // Create corresponding user document
-    await db.collection(COLLECTIONS.USERS).doc(adminUser.uid).set({
-      firstName: 'Admin',
-      lastName: 'User',
-      email: adminUser.email,
-      role: 'admin',
-      createdAt: FieldValue.serverTimestamp(),
-      lastActive: FieldValue.serverTimestamp(),
-      isActive: true
-    });
-
-    // Create regular user document for admin
-    await db.collection(COLLECTIONS.REGULAR_USERS).doc(adminUser.uid).set({
-      uid: adminUser.uid,
-      email: adminUser.email,
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'admin',
-      createdAt: FieldValue.serverTimestamp(),
-      lastActive: FieldValue.serverTimestamp(),
-      isActive: true,
-      preferences: {
-        notifications: true,
-        emailNotifications: true,
-        smsNotifications: true
-      }
-    });
-
-    // Initialize time slots
-    console.log('\nInitializing time slots...');
-    for (const region of REGIONS) {
-      const regionRef = await db.collection(COLLECTIONS.REGIONS).add({
-        name: region.name,
-        subtitle: region.subtitle,
-        isActive: true,
-        createdAt: FieldValue.serverTimestamp()
-      });
-
-      // Create time slots for each region
-      for (const slot of TIME_SLOTS) {
-        await db.collection(COLLECTIONS.TIME_SLOTS).add({
-          regionId: regionRef.id,
-          region: region.name,
-          day: slot.day,
-          time: slot.time,
-          duration: slot.duration,
-          maxSlots: 5,
-          availableSlots: 5,
-          isAvailable: true,
-          createdAt: FieldValue.serverTimestamp()
-        });
-      }
-    }
-    console.log('Time slots initialized successfully');
-
-    console.log('Admin user initialized successfully');
-    console.log('\nAdmin credentials:');
-    console.log('Email:', adminUser.email);
-    console.log('Password:', USERS.admin.password);
-    console.log('\nPlease change the password after first login!');
 
     // Initialize manager user
     console.log('\nInitializing manager user...');
@@ -239,7 +177,6 @@ async function initializeAll() {
       }
     }
 
-    // Create manager document
     await db.collection(COLLECTIONS.MANAGERS).doc(managerUser.uid).set({
       email: managerUser.email,
       displayName: managerUser.displayName,
@@ -254,40 +191,6 @@ async function initializeAll() {
       lastActive: FieldValue.serverTimestamp(),
       isActive: true
     });
-
-    // Create corresponding user document
-    await db.collection(COLLECTIONS.USERS).doc(managerUser.uid).set({
-      firstName: 'Manager',
-      lastName: 'User',
-      email: managerUser.email,
-      role: 'manager',
-      createdAt: FieldValue.serverTimestamp(),
-      lastActive: FieldValue.serverTimestamp(),
-      isActive: true
-    });
-
-    // Create regular user document for manager
-    await db.collection(COLLECTIONS.REGULAR_USERS).doc(managerUser.uid).set({
-      uid: managerUser.uid,
-      email: managerUser.email,
-      firstName: 'Manager',
-      lastName: 'User',
-      role: 'manager',
-      createdAt: FieldValue.serverTimestamp(),
-      lastActive: FieldValue.serverTimestamp(),
-      isActive: true,
-      preferences: {
-        notifications: true,
-        emailNotifications: true,
-        smsNotifications: true
-      }
-    });
-
-    console.log('Manager user initialized successfully');
-    console.log('\nManager credentials:');
-    console.log('Email:', managerUser.email);
-    console.log('Password:', USERS.manager.password);
-    console.log('\nPlease change the password after first login!');
 
     // Initialize regular users
     console.log('\nInitializing regular users...');
@@ -307,18 +210,6 @@ async function initializeAll() {
         }
       }
 
-      // Create user document
-      await db.collection(COLLECTIONS.USERS).doc(user.uid).set({
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        email: userData.email,
-        role: 'user',
-        createdAt: FieldValue.serverTimestamp(),
-        lastActive: FieldValue.serverTimestamp(),
-        isActive: true
-      });
-
-      // Create regular user document
       await db.collection(COLLECTIONS.REGULAR_USERS).doc(user.uid).set({
         uid: user.uid,
         email: userData.email,
@@ -337,8 +228,6 @@ async function initializeAll() {
       });
     }
 
-    console.log('Regular users initialized successfully');
-
     // Initialize regions
     console.log('\nInitializing regions...');
     for (const region of REGIONS) {
@@ -348,12 +237,49 @@ async function initializeAll() {
       });
     }
 
-    console.log('Regions initialized successfully');
+    // Initialize time slots
+    console.log('\nInitializing time slots...');
+    for (const region of REGIONS) {
+      for (const product of PRODUCTS) {
+        for (const day of DAYS_OF_WEEK) {
+          for (const slot of TIME_SLOTS.filter(s => s.day === day)) {
+            const regionName = region.name.toLowerCase().replace(/\s+/g, '-');
+            await db.collection(COLLECTIONS.TIME_SLOTS).add({
+              region: region.name,
+              regionId: regionName,
+              product: product,
+              time: slot.time,
+              duration: slot.duration,
+              day: day,
+              maxSlots: 4,
+              availableSlots: 4,
+              isActive: true,
+              createdAt: FieldValue.serverTimestamp(),
+              lastModified: FieldValue.serverTimestamp()
+            });
+          }
+        }
+      }
+    }
 
     console.log('\nDatabase initialization completed successfully!');
+    console.log('\nUser credentials:');
+    console.log('\nAdmin:');
+    console.log('Email:', USERS.admin.email);
+    console.log('Password:', USERS.admin.password);
+    console.log('\nManager:');
+    console.log('Email:', USERS.manager.email);
+    console.log('Password:', USERS.manager.password);
+    console.log('\nRegular Users:');
+    USERS.regular.forEach((user, index) => {
+      console.log(`\nUser ${index + 1}:`);
+      console.log('Email:', user.email);
+      console.log('Password:', user.password);
+    });
+    console.log('\nPlease ask users to change their passwords after first login!');
 
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('Error during initialization:', error);
   } finally {
     process.exit();
   }

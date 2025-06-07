@@ -9,8 +9,6 @@
     <script type="module" src="./firebase-config.js"></script>
     <!-- Add Firebase Collections -->
     <script type="module" src="./firebase-collections.js"></script>
-    <!-- Add User Info Handler -->
-    <script type="module" src="./schedule-user-info.js"></script>
     <!-- Add Booking Modal -->
     <script type="module">
         import { openBookingModal } from './booking-modal.js';
@@ -105,24 +103,25 @@
 
         .user-role {
             font-size: 0.875rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 1rem;
             font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            display: inline-block;
         }
 
         .user-role.admin {
-            background-color: #2563eb;
-            color: white;
+            background: #dbeafe;
+            color: #1e40af;
         }
 
         .user-role.manager {
-            background-color: #f59e0b;
-            color: white;
+            background: #fef3c7;
+            color: #92400e;
         }
 
         .user-role.user {
-            background-color: #64748b;
-            color: white;
+            background: #f3f4f6;
+            color: #4b5563;
         }
 
         .main-container {
@@ -1231,7 +1230,7 @@
     </style>
 </head>
 <body>
-    <header class="header">
+    <div class="header">
         <div class="header-content">
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar"></div>
@@ -1249,7 +1248,7 @@
                 </button>
             </div>
         </div>
-    </header>
+    </div>
 
     <div class="main-container">
         <h1 class="page-title">
@@ -1540,13 +1539,6 @@
                                 <div class="info-item-value" id="modalTime"></div>
                             </div>
                         </div>
-                        <div class="info-item">
-                            <i class="fas fa-calendar"></i>
-                            <div class="info-item-content">
-                                <div class="info-item-label">Date</div>
-                                <div class="info-item-value" id="modalDate"></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="booking-summary">
@@ -1682,7 +1674,7 @@
                 Same Day (${formatDate(today)})
             `;
             sameDayButton.onclick = () => switchDay('same-day');
-            dayNav.appendChild(sameDayButton);
+                dayNav.appendChild(sameDayButton);
 
             // Get next 10 days (excluding today)
             const days = getNextDays(10);
@@ -1723,11 +1715,11 @@
             if (clickedButton.dataset.day === 'same-day') {
                 const today = new Date();
                 const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
-                loadTimeSlots(dayName, today);
+                loadTimeSlots(dayName);
             } else {
                 const selectedDate = new Date(clickedButton.dataset.date);
                 const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
-                loadTimeSlots(dayName, selectedDate);
+                loadTimeSlots(dayName);
             }
         }
 
@@ -1735,35 +1727,10 @@
         let currentBooking = null;
 
         function openBookingModal(region, product, time) {
-            const selectedDayButton = document.querySelector('.day-button.active');
-            if (!selectedDayButton) {
-                console.error('No day selected');
-                return;
-            }
-
-            let bookingDate;
-            if (selectedDayButton.dataset.day === 'same-day') {
-                bookingDate = new Date();
-            } else {
-                bookingDate = new Date(selectedDayButton.dataset.date);
-            }
-
-            currentBooking = { 
-                region, 
-                product, 
-                time,
-                date: bookingDate
-            };
-
+            currentBooking = { region, product, time };
             document.getElementById('modalRegion').textContent = region;
             document.getElementById('modalProduct').textContent = product;
             document.getElementById('modalTime').textContent = time;
-            document.getElementById('modalDate').textContent = bookingDate.toLocaleDateString('en-US', { 
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
             document.getElementById('bookingModal').classList.add('active');
         }
 
@@ -1790,7 +1757,9 @@
                     window.collection(window.db, 'time_slots'),
                     window.where('region', '==', currentBooking.region),
                     window.where('product', '==', currentBooking.product),
-                    window.where('time', '==', currentBooking.time)
+                    window.where('time', '==', currentBooking.time),
+                    window.where('day', '==', document.querySelector('.day-button.active').dataset.day),
+                    window.where('isActive', '==', true)
                 ));
 
                 if (timeSlotQuery.empty) {
@@ -1804,15 +1773,14 @@
                     throw new Error('No available slots for this time');
                 }
 
-                // Create booking with specific date
+                // Create booking
                 const bookingRef = await window.addDoc(window.collection(window.db, 'bookings'), {
                     userId: user.uid,
                     userName: `${userData.firstName} ${userData.lastName}`,
                     region: currentBooking.region,
                     product: currentBooking.product,
                     time: currentBooking.time,
-                    date: currentBooking.date.toISOString(),
-                    dayOfWeek: currentBooking.date.toLocaleDateString('en-US', { weekday: 'long' }),
+                    date: window.serverTimestamp(),
                     status: 'confirmed',
                     estimatedDuration: '60-90 minutes',
                     serviceProvider: 'Professional Team',
@@ -1833,8 +1801,7 @@
                     region: currentBooking.region,
                     product: currentBooking.product,
                     time: currentBooking.time,
-                    date: currentBooking.date.toISOString(),
-                    dayOfWeek: currentBooking.date.toLocaleDateString('en-US', { weekday: 'long' }),
+                    date: window.serverTimestamp(),
                     status: 'confirmed',
                     lastModified: window.serverTimestamp()
                 });
@@ -1877,19 +1844,28 @@
                     }
 
                     const userData = userDoc.data();
-                    const headerUserInfo = document.querySelector('.header-user-info');
-                    if (headerUserInfo) {
-                        headerUserInfo.innerHTML = `
-                            <div class="user-avatar">
-                                ${userData.firstName ? userData.firstName[0] : user.email[0]}
-                            </div>
-                            <div class="user-details">
-                                <div class="user-name">${userData.firstName} ${userData.lastName}</div>
-                                <div class="user-role">${userData.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : 'User'}</div>
-                            </div>
-                        `;
-                    }
                     
+                    // Update user avatar with initial
+                    const userAvatar = document.getElementById('userAvatar');
+                    if (userAvatar) {
+                        const initial = userData.firstName ? userData.firstName[0].toUpperCase() : user.email[0].toUpperCase();
+                        userAvatar.textContent = initial;
+                    }
+
+                    // Update user name
+                    const userName = document.getElementById('userName');
+                    if (userName) {
+                        userName.textContent = `${userData.firstName} ${userData.lastName}`;
+                    }
+
+                    // Update user role
+                    const userRole = document.getElementById('userRole');
+                    if (userRole) {
+                        const role = userData.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : 'User';
+                        userRole.textContent = role;
+                        userRole.className = `user-role ${userData.role || 'user'}`;
+                    }
+                            
                     // Show admin dashboard button for managers and admins
                     if (userData.role === 'manager' || userData.role === 'admin') {
                         document.getElementById('adminDashboardButton').style.display = 'flex';
@@ -1964,7 +1940,7 @@
         }
 
         // Load time slots
-        async function loadTimeSlots(dayName, selectedDate) {
+        async function loadTimeSlots(dayName) {
             try {
                 // Get the selected day if no dayName is provided
                 if (!dayName) {
@@ -1978,10 +1954,9 @@
                     if (selectedDayButton.dataset.day === 'same-day') {
                         const today = new Date();
                         dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
-                        selectedDate = today;
                     } else {
                         // Get the full date from the button's dataset
-                        selectedDate = new Date(selectedDayButton.dataset.date);
+                        const selectedDate = new Date(selectedDayButton.dataset.date);
                         dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' });
                     }
                 }
@@ -2002,7 +1977,7 @@
                 }));
 
                 // Update the UI with the time slots
-                updateTimeSlotsUI(timeSlots, selectedDate);
+                updateTimeSlotsUI(timeSlots);
             } catch (error) {
                 console.error('Error loading time slots:', error);
             }
@@ -2248,7 +2223,7 @@
         // Call initializePage when the document is ready
         document.addEventListener('DOMContentLoaded', initializePage);
 
-        function updateTimeSlotsUI(timeSlots, selectedDate) {
+        function updateTimeSlotsUI(timeSlots) {
             // Group time slots by region and product
             const slotsByRegionAndProduct = {};
             
@@ -2288,53 +2263,6 @@
                 `).join('') || '<div class="no-slots">No available time slots</div>';
             }
         }
-
-        // Function to update user info in header
-        async function updateUserInfo() {
-            try {
-                const user = window.auth.currentUser;
-                if (!user) {
-                    console.error('No user logged in');
-                    return;
-                }
-
-                // Try to get user from regular_users collection first
-                let userDoc = await window.getDoc(window.doc(window.db, 'regular_users', user.uid));
-                
-                // If not found in regular_users, try users collection
-                if (!userDoc.exists()) {
-                    userDoc = await window.getDoc(window.doc(window.db, 'users', user.uid));
-                }
-
-                if (!userDoc.exists()) {
-                    console.error('User document not found in either collection');
-                    return;
-                }
-
-                const userData = userDoc.data();
-                const headerUserInfo = document.querySelector('.header-user-info');
-                if (headerUserInfo) {
-                    headerUserInfo.innerHTML = `
-                        <div class="user-avatar">
-                            ${userData.firstName ? userData.firstName[0] : user.email[0]}
-                        </div>
-                        <div class="user-details">
-                            <div class="user-name">${userData.firstName} ${userData.lastName}</div>
-                            <div class="user-role">${userData.role ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1) : 'User'}</div>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error updating user info:', error);
-            }
-        }
-
-        // Call updateUserInfo when auth state changes
-        window.onAuthStateChanged(window.auth, (user) => {
-            if (user) {
-                updateUserInfo();
-            }
-        });
     </script>
 </body>
 </html> 

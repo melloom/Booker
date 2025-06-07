@@ -9,8 +9,8 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/regular_users/$(request.auth.uid)).data.role == 'admin')
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
     
@@ -26,16 +26,15 @@ service cloud.firestore {
     function isManager() {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/managers/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/regular_users/$(request.auth.uid)).data.role == 'manager')
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager')
       );
     }
     
     function isUser() {
       return isAuthenticated() && (
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/regular_users/$(request.auth.uid)).data.role == 'user')
+        exists(/databases/$(database)/documents/regular_users/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'user'
       );
     }
 
@@ -86,7 +85,7 @@ service cloud.firestore {
 
     // Time Slots Collection
     match /time_slots/{slotId} {
-      allow read: if isAuthenticated() && (isAdmin() || isManager() || isUser());
+      allow read: if isAuthenticated();
       allow create: if isAdminOrManager();
       allow update: if isAdminOrManager();
       allow delete: if isAdminOrManager();

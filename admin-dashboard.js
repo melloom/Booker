@@ -2159,115 +2159,62 @@ async function loadIntegrations() {
 
 // Function to save Salesforce settings
 async function saveSalesforceSettings() {
-    const accessToken = document.getElementById('salesforceAccessToken').value;
-    const instanceUrl = document.getElementById('salesforceInstanceUrl').value;
+    try {
+        const accessToken = document.getElementById('salesforceAccessToken').value;
+        const instanceUrl = document.getElementById('salesforceInstanceUrl').value;
 
-    if (!accessToken || !instanceUrl) {
-        showNotification('Please fill in all Salesforce fields', 'error');
-        return;
-    }
+        if (!accessToken || !instanceUrl) {
+            showError('Please fill in all required fields');
+            return;
+        }
 
-    const settings = {
-        accessToken,
-        instanceUrl,
-        isConnected: false
-    };
-
-    if (saveIntegrationSettings('salesforce', settings)) {
-        showNotification('Salesforce settings saved successfully', 'success');
-        await testSalesforceConnection();
-    } else {
-        showNotification('Failed to save Salesforce settings', 'error');
+        await saveSalesforceSettings(accessToken, instanceUrl);
+        showSuccess('Salesforce settings saved successfully');
+        loadIntegrations();
+    } catch (error) {
+        console.error('Error saving Salesforce settings:', error);
+        showError('Failed to save Salesforce settings');
     }
 }
 
 // Function to test Salesforce connection
 async function testSalesforceConnection() {
-    const settings = getIntegrationSettings('salesforce');
-    if (!settings) {
-        showNotification('No Salesforce settings found', 'error');
-        return;
-    }
-
     try {
-        // Test the connection by making a simple API call
-        const response = await fetch(`${settings.instanceUrl}/services/data/v57.0/sobjects`, {
-            headers: {
-                'Authorization': `Bearer ${settings.accessToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            settings.isConnected = true;
-            saveIntegrationSettings('salesforce', settings);
-            updateIntegrationStatus('salesforce', true);
-            showNotification('Salesforce connection successful', 'success');
-        } else {
-            throw new Error('Connection failed');
-        }
+        await testSalesforceConnection();
+        showSuccess('Salesforce connection test successful');
     } catch (error) {
-        console.error('Salesforce connection test failed:', error);
-        settings.isConnected = false;
-        saveIntegrationSettings('salesforce', settings);
-        updateIntegrationStatus('salesforce', false);
-        showNotification('Salesforce connection test failed', 'error');
+        console.error('Error testing Salesforce connection:', error);
+        showError('Failed to test Salesforce connection');
     }
 }
 
 // Function to save Geckoboard settings
 async function saveGeckoboardSettings() {
-    const apiKey = document.getElementById('geckoboardApiKey').value;
+    try {
+        const apiKey = document.getElementById('geckoboardApiKey').value;
 
-    if (!apiKey) {
-        showNotification('Please enter your Geckoboard API key', 'error');
-        return;
-    }
+        if (!apiKey) {
+            showError('Please enter the API key');
+            return;
+        }
 
-    const settings = {
-        apiKey,
-        isConnected: false
-    };
-
-    if (saveIntegrationSettings('geckoboard', settings)) {
-        showNotification('Geckoboard settings saved successfully', 'success');
-        await testGeckoboardConnection();
-    } else {
-        showNotification('Failed to save Geckoboard settings', 'error');
+        await saveGeckoboardSettings(apiKey);
+        showSuccess('Geckoboard settings saved successfully');
+        loadIntegrations();
+    } catch (error) {
+        console.error('Error saving Geckoboard settings:', error);
+        showError('Failed to save Geckoboard settings');
     }
 }
 
 // Function to test Geckoboard connection
 async function testGeckoboardConnection() {
-    const settings = getIntegrationSettings('geckoboard');
-    if (!settings) {
-        showNotification('No Geckoboard settings found', 'error');
-        return;
-    }
-
     try {
-        // Test the connection by making a simple API call
-        const response = await fetch('https://api.geckoboard.com/datasets', {
-            headers: {
-                'Authorization': `Basic ${btoa(settings.apiKey + ':')}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            settings.isConnected = true;
-            saveIntegrationSettings('geckoboard', settings);
-            updateIntegrationStatus('geckoboard', true);
-            showNotification('Geckoboard connection successful', 'success');
-        } else {
-            throw new Error('Connection failed');
-        }
+        await testGeckoboardConnection();
+        showSuccess('Geckoboard connection test successful');
     } catch (error) {
-        console.error('Geckoboard connection test failed:', error);
-        settings.isConnected = false;
-        saveIntegrationSettings('geckoboard', settings);
-        updateIntegrationStatus('geckoboard', false);
-        showNotification('Geckoboard connection test failed', 'error');
+        console.error('Error testing Geckoboard connection:', error);
+        showError('Failed to test Geckoboard connection');
     }
 }
 
@@ -2904,23 +2851,3 @@ const notificationStyles = `
 const styleSheet = document.createElement('style');
 styleSheet.textContent = notificationStyles;
 document.head.appendChild(styleSheet);
-
-// Helper function to update integration status UI
-function updateIntegrationStatus(integration, isConnected) {
-    const card = document.getElementById(`${integration}Card`);
-    const statusBadge = document.getElementById(`${integration}Status`).querySelector('.status-badge');
-    
-    if (isConnected) {
-        card.classList.add('connected');
-        card.classList.remove('disconnected');
-        statusBadge.classList.add('connected');
-        statusBadge.classList.remove('disconnected');
-        statusBadge.textContent = 'Connected';
-    } else {
-        card.classList.remove('connected');
-        card.classList.add('disconnected');
-        statusBadge.classList.remove('connected');
-        statusBadge.classList.add('disconnected');
-        statusBadge.textContent = 'Disconnected';
-    }
-}

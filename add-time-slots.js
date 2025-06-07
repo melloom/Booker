@@ -17,79 +17,80 @@ if (!getApps().length) {
 
 const db = getFirestore();
 
-// Collection names
-const COLLECTIONS = {
-  REGIONS: 'regions',
-  TIME_SLOTS: 'time_slots'
-};
-
 // Time slot data
 const TIME_SLOTS = [
-  {time: "10:00 AM", duration: 60, day: "Monday"},
-  {time: "2:00 PM", duration: 60, day: "Monday"},
-  {time: "6:00 PM", duration: 60, day: "Monday"},
-  {time: "10:00 AM", duration: 60, day: "Tuesday"},
-  {time: "2:00 PM", duration: 60, day: "Tuesday"},
-  {time: "6:00 PM", duration: 60, day: "Tuesday"},
-  {time: "10:00 AM", duration: 60, day: "Wednesday"},
-  {time: "2:00 PM", duration: 60, day: "Wednesday"},
-  {time: "6:00 PM", duration: 60, day: "Wednesday"},
-  {time: "10:00 AM", duration: 60, day: "Thursday"},
-  {time: "2:00 PM", duration: 60, day: "Thursday"},
-  {time: "6:00 PM", duration: 60, day: "Thursday"},
-  {time: "10:00 AM", duration: 60, day: "Friday"},
-  {time: "2:00 PM", duration: 60, day: "Friday"},
-  {time: "6:00 PM", duration: 60, day: "Friday"}
+  {time: "10:00 AM", duration: 60},
+  {time: "2:00 PM", duration: 60},
+  {time: "6:00 PM", duration: 60}
+];
+
+// Products
+const PRODUCTS = ["Bathrooms", "Roofing"];
+
+// Regions
+const REGIONS = [
+  {name: "MIDA", subtitle: "DC, Virginia, Maryland"},
+  {name: "SOPA", subtitle: "Southern Pennsylvania"},
+  {name: "Southern Virginia", subtitle: "Southern Virginia"},
+  {name: "Florida", subtitle: ""},
+  {name: "New England", subtitle: "Massachusetts & Rhode Island"},
+  {name: "Connecticut", subtitle: ""}
 ];
 
 async function addTimeSlots() {
   try {
-    console.log('Starting to add time slots...');
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get existing regions
-    const regionsSnapshot = await db.collection(COLLECTIONS.REGIONS).get();
-    if (regionsSnapshot.empty) {
-      console.log('No regions found. Please create regions first.');
-      return;
-    }
+    const days = [
+      { date: today, name: today.toLocaleDateString('en-US', { weekday: 'long' }) },
+      { date: tomorrow, name: tomorrow.toLocaleDateString('en-US', { weekday: 'long' }) }
+    ];
 
-    // Add time slots for each region
-    for (const regionDoc of regionsSnapshot.docs) {
-      const region = regionDoc.data();
-      console.log(`Adding time slots for region: ${region.name}`);
+    for (const day of days) {
+      for (const region of REGIONS) {
+        for (const product of PRODUCTS) {
+          for (const slot of TIME_SLOTS) {
+            const regionName = region.name.toLowerCase().replace(/\s+/g, '-');
+            
+            // Check if time slot already exists
+            const existingSlots = await db.collection('time_slots')
+              .where('day', '==', day.name)
+              .where('region', '==', region.name)
+              .where('product', '==', product)
+              .where('time', '==', slot.time)
+              .get();
 
-      // Check if time slots already exist for this region
-      const existingSlots = await db.collection(COLLECTIONS.TIME_SLOTS)
-        .where('regionId', '==', regionDoc.id)
-        .get();
-
-      if (!existingSlots.empty) {
-        console.log(`Time slots already exist for region: ${region.name}`);
-        continue;
+            if (existingSlots.empty) {
+              await db.collection('time_slots').add({
+                region: region.name,
+                regionId: regionName,
+                product: product,
+                time: slot.time,
+                duration: slot.duration,
+                day: day.name,
+                maxSlots: 4,
+                availableSlots: 4,
+                isActive: true,
+                createdAt: FieldValue.serverTimestamp(),
+                lastModified: FieldValue.serverTimestamp()
+              });
+              console.log(`Added time slot for ${day.name} at ${slot.time} for ${region.name} - ${product}`);
+            } else {
+              console.log(`Time slot already exists for ${day.name} at ${slot.time} for ${region.name} - ${product}`);
+            }
+          }
+        }
       }
-
-      // Create time slots for this region
-      for (const slot of TIME_SLOTS) {
-        await db.collection(COLLECTIONS.TIME_SLOTS).add({
-          regionId: regionDoc.id,
-          region: region.name,
-          day: slot.day,
-          time: slot.time,
-          duration: slot.duration,
-          maxSlots: 5,
-          availableSlots: 5,
-          isAvailable: true,
-          createdAt: FieldValue.serverTimestamp()
-        });
-      }
-      console.log(`Added time slots for region: ${region.name}`);
     }
 
     console.log('Time slots added successfully!');
   } catch (error) {
     console.error('Error adding time slots:', error);
+  } finally {
+    process.exit();
   }
 }
 
-// Run the function
 addTimeSlots(); 
