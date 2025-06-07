@@ -235,7 +235,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // Your Firebase configuration
         const firebaseConfig = {
@@ -252,33 +252,45 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // Set persistence to SESSION only (will clear on tab/window close)
+        // Set persistence to SESSION only
         setPersistence(auth, browserSessionPersistence);
 
         const loginForm = document.getElementById('loginForm');
         const errorMessage = document.getElementById('errorMessage');
 
+        // Handle form submission
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
             try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                // Redirect to dashboard or home page
-                window.location.href = '/dashboard.html';
+                await signInWithEmailAndPassword(auth, email, password);
+                // Redirect will be handled by onAuthStateChanged
             } catch (error) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = error.message;
             }
         });
 
-        // Check if user is already logged in
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                window.location.href = '/dashboard.html';
+        // Handle auth state changes
+        let isRedirecting = false;
+        onAuthStateChanged(auth, (user) => {
+            if (user && !isRedirecting) {
+                isRedirecting = true;
+                window.location.replace('/dashboard.html');
             }
         });
+
+        // Check if we're already on the login page and user is not authenticated
+        if (window.location.pathname.includes('login.html')) {
+            onAuthStateChanged(auth, (user) => {
+                if (!user) {
+                    // Clear any existing auth state
+                    auth.signOut();
+                }
+            });
+        }
     </script>
 </body>
 </html> 
