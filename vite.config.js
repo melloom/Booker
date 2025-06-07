@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
+import { resolve } from 'path'
 
 export default defineConfig({
+  base: '/',
   server: {
     port: 5173,
     proxy: {
@@ -16,12 +18,17 @@ export default defineConfig({
     assetsDir: 'assets',
     emptyOutDir: true,
     rollupOptions: {
-      external: [
-        'firebase/app',
-        'firebase/auth',
-        'firebase/firestore',
-        'firebase/analytics'
-      ]
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        login: resolve(__dirname, 'login.html'),
+        register: resolve(__dirname, 'register.html'),
+        scheduler: resolve(__dirname, 'scheduler.html')
+      },
+      output: {
+        manualChunks: {
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/analytics']
+        }
+      }
     }
   }
 }) 

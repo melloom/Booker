@@ -251,7 +251,10 @@
         const auth = firebase.auth();
 
         // Set persistence to SESSION only
-        auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+        auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+            .catch((error) => {
+                console.error("Auth persistence error:", error);
+            });
 
         const loginForm = document.getElementById('loginForm');
         const errorMessage = document.getElementById('errorMessage');
@@ -259,18 +262,13 @@
         // Check if user is already logged in
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // Only redirect if we're on the login page
-                const currentPath = window.location.pathname;
-                if (currentPath.endsWith('login.html') || currentPath.endsWith('login')) {
-                    window.location.href = './index.html';
-                }
-            } else {
-                // If not logged in and not on login page, redirect to login
-                const currentPath = window.location.pathname;
-                if (!currentPath.endsWith('login.html') && !currentPath.endsWith('login')) {
-                    window.location.href = './login.html';
-                }
+                // User is signed in
+                window.location.href = '/scheduler.html';
             }
+        }, (error) => {
+            console.error("Auth state change error:", error);
+            errorMessage.style.display = 'block';
+            errorMessage.textContent = "Authentication error. Please try again.";
         });
 
         loginForm.addEventListener('submit', async (e) => {
@@ -279,10 +277,11 @@
             const password = document.getElementById('password').value;
 
             try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                // Redirect to home page after successful login
-                window.location.href = './index.html';
+                errorMessage.style.display = 'none';
+                await auth.signInWithEmailAndPassword(email, password);
+                // Redirect will be handled by the auth state change listener
             } catch (error) {
+                console.error("Login error:", error);
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = error.message;
             }
