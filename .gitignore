@@ -1,3 +1,38 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+out/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Electron specific
+electron-builder.yml
+
+# Firebase
+serviceAccountKey.json
+firebase-debug.log
+.firebase/
+
+# Logs
+logs
+*.log
+
 # Logs
 logs
 *.log
@@ -13,7 +48,6 @@ firebase-debug.*.log*
 # Firebase config
 booking-b1567-firebase-adminsdk-fbsvc-5d4adbdb59.json
 booking-b1567-firebase-adminsdk-fbsvc-5eef73dc03.json
-serviceAccountKey.json
 *firebase-adminsdk*.json
 credentials.txt
 
@@ -49,9 +83,6 @@ bower_components
 # Compiled binary addons (http://nodejs.org/api/addons.html)
 build/Release
 
-# Dependency directories
-node_modules/
-
 # Optional npm cache directory
 .npm
 
@@ -67,17 +98,8 @@ node_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env
-
 # dataconnect generated files
 .dataconnect
-
-# IDE files
-.idea/
-.vscode/
-*.swp
-*.swo
 
 # OS generated files
 .DS_Store
@@ -87,15 +109,6 @@ node_modules/
 .Trashes
 ehthumbs.db
 Thumbs.db
-booking-b1567-firebase-adminsdk-fbsvc-5d4adbdb59.json
-
-# Environment variables
-.env.local
-.env.*.local
-
-# Build output
-dist/
-build/
 
 # Local Netlify folder
 .netlify
