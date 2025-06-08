@@ -2,10 +2,13 @@
   "name": "booking-app",
   "version": "1.0.0",
   "description": "Booking Application",
-  "main": "main.js",
+  "main": "electron/main.js",
   "type": "module",
   "scripts": {
     "start": "electron .",
+    "dev": "electron .",
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
     "init-collections": "node initialize-collections.js",
     "init-all": "node initialize-all.js"
   },
@@ -20,6 +23,7 @@
     "electron": "^28.0.0",
     "firebase": "^9.23.0",
     "firebase-admin": "^11.11.1",
-    "nodemailer": "^7.0.3"
+    "nodemailer": "^7.0.3",
+    "vue-router": "^4.5.1"
   }
 }

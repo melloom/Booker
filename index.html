@@ -3,21 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: https: https://*.google-analytics.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com; frame-src 'self' https://*.google-analytics.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; img-src 'self' data: https: https://*.google-analytics.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com; frame-src 'self' https://*.google-analytics.com https://accounts.google.com;">
     <title>Appointment Scheduler - WFM</title>
+    
     <!-- Add Firebase SDK -->
     <script type="module" src="./firebase-config.js"></script>
+    
     <!-- Add Firebase Collections -->
     <script type="module" src="./firebase-collections.js"></script>
+    
     <!-- Add Booking Modal -->
     <script type="module">
         import { openBookingModal } from './booking-modal.js';
         window.openBookingModal = openBookingModal;
     </script>
+    
+    <!-- Add Time Slots Section -->
+    <script type="module" src="./time-slots-section.js"></script>
+    
     <!-- Add Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <!-- Add Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Add your CSS -->
+    <link rel="stylesheet" href="./styles.css">
     <style>
         :root {
             --primary-color: #2563eb;

@@ -15,13 +15,13 @@ app.whenReady().then(() => {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           "default-src 'self' https:;",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com;",
-          "script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
+          "script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;",
           "img-src 'self' data: https: https://*.google-analytics.com;",
           "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;",
-          "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com;",
-          "frame-src 'self' https://*.google-analytics.com;"
+          "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
+          "frame-src 'self' https://*.google-analytics.com https://accounts.google.com;"
         ].join(' ')
       }
     });
@@ -35,13 +35,13 @@ app.whenReady().then(() => {
           ...details.responseHeaders,
           'Content-Security-Policy': [
             "default-src 'self' https:;",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com;",
-            "script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com;",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
+            "script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;",
             "img-src 'self' data: https: https://*.google-analytics.com;",
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;",
-            "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com;",
-            "frame-src 'self' https://*.google-analytics.com;"
+            "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
+            "frame-src 'self' https://*.google-analytics.com https://accounts.google.com;"
           ].join(' ')
         }
       });
@@ -71,25 +71,23 @@ function createWindow() {
         ...details.responseHeaders,
         'Content-Security-Policy': [
           "default-src 'self' https:;",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com;",
-          "script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
+          "script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;",
           "img-src 'self' data: https: https://*.google-analytics.com;",
           "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;",
-          "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com;",
-          "frame-src 'self' https://*.google-analytics.com;"
+          "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.google-analytics.com https://apis.google.com https://accounts.google.com;",
+          "frame-src 'self' https://*.google-analytics.com https://accounts.google.com;"
         ].join(' ')
       }
     });
   });
 
   // Load the login page
-  win.loadFile('login.html');
+  win.loadFile(path.join(__dirname, 'login.html'));
 
   // Open DevTools in development
-  if (process.env.NODE_ENV === 'development') {
-    win.webContents.openDevTools();
-  }
+  win.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {

@@ -61,6 +61,23 @@ window.logout = async () => {
     }
 };
 
+// Check authentication state
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        console.log('User is logged in:', user.uid);
+        // User is signed in
+        if (window.location.pathname.includes('login.html')) {
+            window.location.href = 'index.html';
+        }
+    } else {
+        console.log('No user is logged in');
+        // User is signed out
+        if (!window.location.pathname.includes('login.html')) {
+            window.location.href = 'login.html';
+        }
+    }
+});
+
 // Export all Firebase functions and instances
 export {
     app,

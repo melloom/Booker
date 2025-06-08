@@ -222,6 +222,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Web Version Collections
+    match /timeSlots/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrManager();
+    }
+
+    match /settings/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrManager();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
